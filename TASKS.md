@@ -1,9 +1,41 @@
 # terra-api-fe Tasks
 <!-- Repo-local task tracker. IDs referenced from HUB_STATE.md -> terra-api-fe (prefix: TFE). -->
+<!-- Phase numbers below match terra-api-adr-009's "Build Sequence" section (added 2026-07-24). -->
 
-- [ ] TFE-001 - Confirm frontend deploy architecture: standalone repo (current state - own
-      GitHub remote `will55555/terra-api-fe`) vs. the originally-floated monorepo-subdirectory-
-      of-terra-api plan; wire same-origin EC2 deploy alongside terra-api backend once decided.
-      Also confirm whether a Bitbucket mirror remote should be added to match terra-api's
-      dual-remote pattern (merge history references `bitbucket/main` but no such remote is
-      currently configured).
+- [x] TFE-001 - Confirm frontend deploy architecture: standalone repo (own GitHub remote
+      `will55555/terra-api-fe`), NOT the originally-floated monorepo-subdirectory-of-terra-api
+      plan. Dual-remote confirmed 2026-07-24 - `bitbucket` (`terra-inc-dev/terra-api-fe`) added
+      locally, matching terra-api's pattern.
+- [x] TFE-002 - Push local `main` to `bitbucket` remote to resync the mirror. DONE 2026-07-24 -
+      `bitbucket/main` now at `41c5ebd`, matches `origin/main`.
+- [x] TFE-003 - Adopt terra-api's phase-branch workflow (Will confirmed 2026-07-24): one branch
+      per phase, pre-PR branch + SonarQube cleanup before merging to `main`, original phase
+      branch kept untouched with full history.
+
+## Phase 1 - Auth Shell (branch `phase-1-auth-shell`, cut 2026-07-24)
+- [ ] TFE-101 - Login flow + JWT bearer storage/attach against terra-api's existing auth
+      endpoints (terra-api-adr-003, already live).
+- [ ] TFE-102 - Protected-route shell (redirect unauthenticated users to login).
+- [ ] TFE-103 - Environment-based endpoint config (dev/prod API base URL).
+
+## Phase 2 - Same-Origin Deploy Wiring (spans this repo + terra-api)
+- [ ] TFE-201 - Jenkins: build this repo (`npm install && npm run build`), copy `build/` into
+      terra-api's `src/main/resources/static` before terra-api's jar is packaged
+      (terra-api-adr-009, 2026-07-24 Update #2). Lives in terra-api's Jenkinsfile, tracked here
+      since it's this repo's deploy dependency.
+
+## Phase 3 - Backend Health, Entitlement & Role Claim (terra-api repo, not this one)
+- [ ] TFE-301 - `GET /api/v1/ecosystem/health` endpoint (terra-api-adr-005 amendment).
+- [ ] TFE-302 - `customer_service_access` table, seeded single-row (terra-api-adr-011).
+- [ ] TFE-303 - `role`/`aud` JWT claim on `SelfTokenIssuer`/`TokenValidator` (terra-api-adr-010's
+      trigger fired via this build; bundled into this phase for deploy efficiency, not because
+      Phase 4 needs it yet).
+
+## Phase 4 - Visualizer Integration (this repo, depends on Phase 3)
+- [ ] TFE-401 - Repurpose `terra-hq-site/terra_api_visualizer_phase5.js`'s Three.js logic into
+      this repo.
+- [ ] TFE-402 - Cube filtering per customer, consuming Phase 3's entitlement-filtered endpoint.
+- [ ] TFE-403 - Health-tier color model (HEALTHY/YELLOW/ORANGE/RED, grey/navy off-state) per
+      terra-api-adr-009's Consequences section.
+- Note: can start on static/mock data in parallel with Phase 3, switch over once the real
+  endpoint exists.
