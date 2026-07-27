@@ -11,8 +11,8 @@ RUN npm run build
 FROM node:21-alpine
 WORKDIR /app
 ENV NODE_ENV=production
-COPY package*.json ./
-RUN npm install
+# COPY package*.json ./
+# RUN npm install
 COPY --from=builder /app/build ./build
 
 # Serve the built app (simple static server)
