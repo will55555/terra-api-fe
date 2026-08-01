@@ -18,8 +18,11 @@ Real per-customer accounts are gated behind ADR-003's Issuer Model trigger and A
 `customer_service_access` table (Phase 3 backend work, not yet built) — noted in `TASKS.md`.
 
 ### Files Created / Modified
-- `.env.development` — `REACT_APP_API_BASE_URL` (dev-time backend URL, port 8081)
-- `src/config/apiConfig.js` — reads the env var, falls back to `localhost:8081`
+- `.env.development` — left unset on purpose (see CORS error below); only needed to override
+  toward a non-local backend
+- `package.json` — `"proxy": "http://localhost:8081"` (CRA dev-server proxy, see CORS error below)
+- `src/config/apiConfig.js` — reads `REACT_APP_API_BASE_URL`, defaults to a relative empty
+  string so requests are same-origin in both dev (via the proxy) and prod
 - `src/services/authService.js` — `login`/`logout`/`getToken`/`isAuthenticated`/`authFetch`
 - `src/context/AuthContext.js` — React context wrapping the service
 - `src/components/ProtectedRoute.js` — redirects unauthenticated users to `/login`
@@ -43,6 +46,27 @@ touches the response body.
 **Why not the backend-side fix:** also considered having `AuthController` return a real JSON
 error body on 401 so the frontend could show a backend-authored message — deferred since it's
 a `terra-api` change, out of this phase's scope; revisit if a nicer end-user message matters later.
+
+### Error — CORS blocked login in local dev
+**Where:** `authService.js`'s `login()`, browser fetch to `terra-api` from the CRA dev server
+**Full error:** `Access to fetch at 'http://localhost:8081/api/auth/login' from origin
+'http://localhost:3000' has been blocked by CORS policy: Response to preflight request
+doesn't pass access control check: No 'Access-Control-Allow-Origin' header is present`
+**Root cause:** `terra-api` has zero CORS configuration (confirmed — no
+`CorsConfigurationSource` anywhere), by design per ADR-009: production serves the frontend
+same-origin, so CORS was deliberately never built. Local dev genuinely is cross-origin
+(`:3000` → `:8081`), which a same-origin-only backend can't satisfy.
+**Fix:** CRA's `"proxy": "http://localhost:8081"` (`package.json`) + `apiConfig.js` defaulting
+to a relative (empty) base URL instead of an absolute dev URL. The dev server now proxies
+`/api/*` server-side, so the browser never makes a cross-origin request at all — matches
+production's real same-origin shape instead of introducing a different cross-origin path
+just for dev.
+**Why not backend CORS config:** would work, but adds a permissive surface to `terra-api`
+that ADR-009 explicitly chose to avoid by going same-origin; the proxy approach needed zero
+backend changes and made dev and prod behave the same way instead of differently.
+**Verified live:** logged in with the configured `TERRA_AUTH_USERNAME`/`PASSWORD` credential,
+redirected to `/`, `ProtectedRoute` rendered the Dashboard placeholder — full Phase 1 flow
+confirmed end-to-end in a real browser.
 
 ### Build / Test Result
 `npm test -- --watchAll=false` — 1/1 passing (`App.test.js`), confirmed by Will.

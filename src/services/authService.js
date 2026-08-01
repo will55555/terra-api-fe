@@ -12,7 +12,7 @@ export async function login(username, password) {
   });
 
   if (!response.ok) {
-    throw new Error("Login failed: " + response.statusText);
+    throw new Error("Login failed: Invalid username or password");
   }
 
   const data = await response.json();
