@@ -13,10 +13,18 @@
       branch kept untouched with full history.
 
 ## Phase 1 - Auth Shell (branch `phase-1-auth-shell`, cut 2026-07-24)
-- [ ] TFE-101 - Login flow + JWT bearer storage/attach against terra-api's existing auth
-      endpoints (terra-api-adr-003, already live).
-- [ ] TFE-102 - Protected-route shell (redirect unauthenticated users to login).
-- [ ] TFE-103 - Environment-based endpoint config (dev/prod API base URL).
+- [x] TFE-101 - Login flow + JWT bearer storage/attach against terra-api's existing auth
+      endpoints (terra-api-adr-003, already live). Done 2026-08-01 — see DEV_LOG.md.
+- [x] TFE-102 - Protected-route shell (redirect unauthenticated users to login). Done 2026-08-01.
+- [x] TFE-103 - Environment-based endpoint config (dev/prod API base URL). Done 2026-08-01.
+
+**No signup flow, by design (not a gap):** terra-api's `AuthService` validates against a
+single hardcoded service-account credential (`TerraAuthProperties`, config-driven) — no user
+database exists yet. Per ADR-003's Issuer Model, a real user DB is gated behind a specific
+trigger (a second independent identity consumer, among others) that hasn't fired. Real
+per-customer accounts arrive with ADR-011's `customer_service_access` table (Phase 3 backend
+work, TFE-301/302/303) — even that's a single seeded row, not self-service registration.
+Don't build a Sign Up page until that backend work exists to register against.
 
 ## Phase 2 - Same-Origin Deploy Wiring (spans this repo + terra-api)
 - [ ] TFE-201 - Jenkins: build this repo (`npm install && npm run build`), copy `build/` into
