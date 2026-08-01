@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NKAP Tier Cards - All 5 Variants</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600&family=JetBrains+Mono:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0a0c10;
+            --surface: #111318;
+            --surface2: #181c24;
+            --surface3: #1e2230;
+            --gold: #c9a84c;
+            --gold-dim: #8a6f30;
+            --text: #e8e4dc;
+            --text-dim: #7a7570;
+            --border-sub: rgba(255, 255, 255, 0.06);
+            --font-serif: 'Cormorant Garamond', serif;
+            --font-mono: 'JetBrains Mono', monospace;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            font-family: var(--font-mono);
+            font-size: 11px;
+            padding: 30px;
+        }
+
+        header {
+            margin-bottom: 30px;
+            border-bottom: 1px solid var(--border-sub);
+            padding-bottom: 16px;
+        }
+
+        h1 {
+            font-family: var(--font-serif);
+            font-size: 28px;
+            font-weight: 400;
+            letter-spacing: 0.2em;
+            color: var(--gold);
+        }
+
+        .subtitle {
+            font-size: 10px;
+            color: var(--text-dim);
+            letter-spacing: 0.1em;
+            margin-top: 4px;
+        }
+
+        .tier-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 24px;
+            max-width: 1600px;
+        }
+
+        .tier-card-wrapper {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .nkap-card {
+            border-radius: 6px;
+            padding: 22px;
+            height: 220px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            position: relative;
+            overflow: hidden;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .nkap-card:hover {
+            transform: translateY(-4px);
+        }
+
+        /* 1. Silver Tier */
+        .card-silver {
+            background: linear-gradient(135deg, #111318 0%, #222630 100%);
+            border: 1px solid rgba(226, 232, 240, 0.25);
+            box-shadow: 0 0 20px rgba(226, 232, 240, 0.04);
+        }
+        .badge-silver {
+            color: #e2e8f0;
+            background: rgba(226, 232, 240, 0.08);
+            border: 1px solid rgba(226, 232, 240, 0.25);
+        }
+        .fill-silver { background: #e2e8f0; box-shadow: 0 0 8px #e2e8f0; }
+
+        /* 2. Gold Tier */
+        .card-gold {
+            background: linear-gradient(135deg, #111318 0%, #2a2212 100%);
+            border: 1px solid rgba(201, 168, 76, 0.35);
+            box-shadow: 0 0 20px rgba(201, 168, 76, 0.08);
+        }
+        .badge-gold {
+            color: #c9a84c;
+            background: rgba(201, 168, 76, 0.1);
+            border: 1px solid rgba(201, 168, 76, 0.35);
+        }
+        .fill-gold { background: #c9a84c; box-shadow: 0 0 8px #c9a84c; }
+
+        /* 3. Platinum Tier */
+        .card-platinum {
+            background: linear-gradient(135deg, #0a0c10 0%, #0f2623 100%);
+            border: 1px solid rgba(45, 212, 191, 0.3);
+            box-shadow: 0 0 20px rgba(45, 212, 191, 0.08);
+        }
+        .badge-platinum {
+            color: #2dd4bf;
+            background: rgba(45, 212, 191, 0.1);
+            border: 1px solid rgba(45, 212, 191, 0.3);
+        }
+        .fill-platinum { background: #2dd4bf; box-shadow: 0 0 8px #2dd4bf; }
+
+        /* 4. Diamond Tier */
+        .card-diamond {
+            background: linear-gradient(135deg, #0a0c10 0%, #1e1730 100%);
+            border: 1px solid rgba(167, 139, 250, 0.35);
+            box-shadow: 0 0 20px rgba(167, 139, 250, 0.08);
+        }
+        .badge-diamond {
+            color: #a78bfa;
+            background: rgba(167, 139, 250, 0.1);
+            border: 1px solid rgba(167, 139, 250, 0.35);
+        }
+        .fill-diamond { background: #a78bfa; box-shadow: 0 0 8px #a78bfa; }
+
+        /* 5. Sapphire Tier */
+        .card-sapphire {
+            background: linear-gradient(135deg, #0a0c10 0%, #101c33 100%);
+            border: 1px solid rgba(96, 165, 250, 0.35);
+            box-shadow: 0 0 20px rgba(96, 165, 250, 0.08);
+        }
+        .badge-sapphire {
+            color: #60a5fa;
+            background: rgba(96, 165, 250, 0.1);
+            border: 1px solid rgba(96, 165, 250, 0.35);
+        }
+        .fill-sapphire { background: #60a5fa; box-shadow: 0 0 8px #60a5fa; }
+
+        .card-badge {
+            font-size: 8px;
+            letter-spacing: 0.14em;
+            padding: 3px 8px;
+            border-radius: 2px;
+        }
+
+        .progress-bar-bg {
+            width: 100%;
+            height: 3px;
+            background: rgba(255,255,255,0.06);
+            border-radius: 2px;
+            overflow: hidden;
+            margin-top: 6px;
+        }
+
+        .progress-bar-fill { height: 100%; }
+
+        .caption-box {
+            background: var(--surface);
+            border: 1px solid var(--border-sub);
+            padding: 12px;
+            border-radius: 4px;
+        }
+
+        .caption-title {
+            color: var(--gold);
+            font-size: 9px;
+            letter-spacing: 0.1em;
+            margin-bottom: 4px;
+        }
+
+        .caption-desc {
+            color: var(--text-dim);
+            font-size: 10px;
+            line-height: 1.4;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>NKAP PRESTIGE CARDS // 5-TIER SYSTEM</h1>
+        <div class="subtitle">Ecosystem Loyalty & Membership Pass Visual Treatment Comparison</div>
+    </header>
+
+    <div class="tier-grid">
+
+        <!-- 1. Silver -->
+        <div class="tier-card-wrapper">
+            <div class="nkap-card card-silver">
+                <div>
+                    <div style="display: flex; justify-content: space-between;">
+                        <span style="font-family: var(--font-serif); font-size: 16px; letter-spacing: 0.2em; color: #e2e8f0;">TERRA</span>
+                        <span class="card-badge badge-silver">SILVER</span>
+                    </div>
+                    <div style="margin-top: 24px;">
+                        <div style="font-size: 8px; color: var(--text-dim);">UNIFIED BALANCE</div>
+                        <div style="font-size: 20px; color: #e2e8f0; margin-top: 2px;">◈ 12,450.00</div>
+                    </div>
+                </div>
+                <div>
+                    <div style="display: flex; justify-content: space-between; font-size: 8px; color: var(--text-dim);">
+                        <span>TIER PROGRESS</span><span>45% TO GOLD</span>
+                    </div>
+                    <div class="progress-bar-bg"><div class="progress-bar-fill fill-silver" style="width: 45%;"></div></div>
+                </div>
+            </div>
+            <div class="caption-box">
+                <div class="caption-title">// TIER 01: SILVER (#e2e8f0)</div>
+                <div class="caption-desc">Subtle cool slate-grey tone. Clean entry level without feeling cheap; matches brand low-opacity rules.</div>
+            </div>
+        </div>
+
+        <!-- 2. Gold -->
+        <div class="tier-card-wrapper">
+            <div class="nkap-card card-gold">
+                <div>
+                    <div style="display: flex; justify-content: space-between;">
+                        <span style="font-family: var(--font-serif); font-size: 16px; letter-spacing: 0.2em; color: var(--gold);">TERRA</span>
+                        <span class="card-badge badge-gold">GOLD</span>
+                    </div>
+                    <div style="margin-top: 24px;">
+                        <div style="font-size: 8px; color: var(--text-dim);">UNIFIED BALANCE</div>
+                        <div style="font-size: 20px; color: var(--gold); margin-top: 2px;">◈ 45,000.00</div>
+                    </div>
+                </div>
+                <div>
+                    <div style="display: flex; justify-content: space-between; font-size: 8px; color: var(--text-dim);">
+                        <span>TIER PROGRESS</span><span>68% TO PLATINUM</span>
+                    </div>
+                    <div class="progress-bar-bg"><div class="progress-bar-fill fill-gold" style="width: 68%;"></div></div>
+                </div>
+            </div>
+            <div class="caption-box">
+                <div class="caption-title">// TIER 02: GOLD (--gold / #c9a84c)</div>
+                <div class="caption-desc">Anchored directly to Terra's primary brand accent. Warm metallic aesthetic representing established tier.</div>
+            </div>
+        </div>
+
+        <!-- 3. Platinum -->
+        <div class="tier-card-wrapper">
+            <div class="nkap-card card-platinum">
+                <div>
+                    <div style="display: flex; justify-content: space-between;">
+                        <span style="font-family: var(--font-serif); font-size: 16px; letter-spacing: 0.2em; color: #2dd4bf;">TERRA</span>
+                        <span class="card-badge badge-platinum">PLATINUM</span>
+                    </div>
+                    <div style="margin-top: 24px;">
+                        <div style="font-size: 8px; color: var(--text-dim);">UNIFIED BALANCE</div>
+                        <div style="font-size: 20px; color: #2dd4bf; margin-top: 2px;">◈ 88,200.00</div>
+                    </div>
+                </div>
+                <div>
+                    <div style="display: flex; justify-content: space-between; font-size: 8px; color: var(--text-dim);">
+                        <span>TIER PROGRESS</span><span>30% TO DIAMOND</span>
+                    </div>
+                    <div class="progress-bar-bg"><div class="progress-bar-fill fill-platinum" style="width: 30%;"></div></div>
+                </div>
+            </div>
+            <div class="caption-box">
+                <div class="caption-title">// TIER 03: PLATINUM (--teal / #2dd4bf)</div>
+                <div class="caption-desc">Uses secondary brand teal color token. Gives distinct identity while staying 100% inside core brand palette.</div>
+            </div>
+        </div>
+
+        <!-- 4. Diamond -->
+        <div class="tier-card-wrapper">
+            <div class="nkap-card card-diamond">
+                <div>
+                    <div style="display: flex; justify-content: space-between;">
+                        <span style="font-family: var(--font-serif); font-size: 16px; letter-spacing: 0.2em; color: #a78bfa;">TERRA</span>
+                        <span class="card-badge badge-diamond">DIAMOND</span>
+                    </div>
+                    <div style="margin-top: 24px;">
+                        <div style="font-size: 8px; color: var(--text-dim);">UNIFIED BALANCE</div>
+                        <div style="font-size: 20px; color: #a78bfa; margin-top: 2px;">◈ 112,500.00</div>
+                    </div>
+                </div>
+                <div>
+                    <div style="display: flex; justify-content: space-between; font-size: 8px; color: var(--text-dim);">
+                        <span>TIER PROGRESS</span><span>90% TO SAPPHIRE</span>
+                    </div>
+                    <div class="progress-bar-bg"><div class="progress-bar-fill fill-diamond" style="width: 90%;"></div></div>
+                </div>
+            </div>
+            <div class="caption-box">
+                <div class="caption-title">// TIER 04: DIAMOND (--purple / #a78bfa)</div>
+                <div class="caption-desc">Deep purple glow derived from semantic status tokens. Denotes high rarity and institutional access.</div>
+            </div>
+        </div>
+
+        <!-- 5. Sapphire -->
+        <div class="tier-card-wrapper">
+            <div class="nkap-card card-sapphire">
+                <div>
+                    <div style="display: flex; justify-content: space-between;">
+                        <span style="font-family: var(--font-serif); font-size: 16px; letter-spacing: 0.2em; color: #60a5fa;">TERRA</span>
+                        <span class="card-badge badge-sapphire">SAPPHIRE</span>
+                    </div>
+                    <div style="margin-top: 24px;">
+                        <div style="font-size: 8px; color: var(--text-dim);">UNIFIED BALANCE</div>
+                        <div style="font-size: 20px; color: #60a5fa; margin-top: 2px;">◈ 142,850.00</div>
+                    </div>
+                </div>
+                <div>
+                    <div style="display: flex; justify-content: space-between; font-size: 8px; color: var(--text-dim);">
+                        <span>TIER STATUS</span><span style="color: #60a5fa;">MAXIMUM TIER</span>
+                    </div>
+                    <div class="progress-bar-bg"><div class="progress-bar-fill fill-sapphire" style="width: 100%;"></div></div>
+                </div>
+            </div>
+            <div class="caption-box">
+                <div class="caption-title">// TIER 05: SAPPHIRE (--blue / #60a5fa)</div>
+                <div class="caption-desc">Apex tier rendered in deep nocturnal blue. Offers highest prestige and maximal yield multipliers across products.</div>
+            </div>
+        </div>
+
+    </div>
+
+</body>
+</html>

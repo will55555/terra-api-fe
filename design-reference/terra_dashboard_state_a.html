@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TERRA Dashboard - Command Matrix (State A: Today)</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600&family=JetBrains+Mono:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0a0c10;
+            --surface: #111318;
+            --surface2: #181c24;
+            --surface3: #1e2230;
+            --gold: #c9a84c;
+            --gold-dim: #8a6f30;
+            --gold-glow: rgba(201, 168, 76, 0.1);
+            --teal: #2dd4bf;
+            --green: #4ade80;
+            --blue: #60a5fa;
+            --red: #f87171;
+            --amber: #fbbf24;
+            --purple: #a78bfa;
+            --orange: #fb923c;
+            --text: #e8e4dc;
+            --text-dim: #7a7570;
+            --text-muted: #4a4744;
+            --border: rgba(201, 168, 76, 0.18);
+            --border-sub: rgba(255, 255, 255, 0.06);
+            --font-serif: 'Cormorant Garamond', serif;
+            --font-mono: 'JetBrains Mono', monospace;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            font-family: var(--font-mono);
+            font-size: 11px;
+            line-height: 1.5;
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        /* Top Nav */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 16px;
+            margin-bottom: 24px;
+            border-bottom: 1px solid var(--border-sub);
+        }
+
+        .brand-logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .logo-title {
+            font-family: var(--font-serif);
+            font-size: 22px;
+            font-weight: 400;
+            letter-spacing: 0.3em;
+            color: var(--gold);
+            text-transform: uppercase;
+        }
+
+        .nav-badge {
+            font-size: 9px;
+            letter-spacing: 0.14em;
+            color: var(--text-dim);
+            border: 1px solid var(--border-sub);
+            padding: 2px 8px;
+            border-radius: 2px;
+            background: var(--surface);
+        }
+
+        .user-nav {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .nkap-pill {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            padding: 6px 12px;
+            border-radius: 3px;
+            box-shadow: 0 0 12px var(--gold-glow);
+        }
+
+        .nkap-pill-label {
+            font-size: 9px;
+            color: var(--gold);
+            letter-spacing: 0.12em;
+        }
+
+        .nkap-pill-val {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text);
+            letter-spacing: 0.05em;
+        }
+
+        .user-profile {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--text-dim);
+            cursor: pointer;
+        }
+
+        /* Layout Grid */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        /* Top Row: Visualizer + Nkap Card */
+        .top-row {
+            display: grid;
+            grid-template-columns: 1.4fr 1fr;
+            gap: 20px;
+        }
+
+        @media (max-width: 1024px) {
+            .top-row {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .card {
+            background: var(--surface);
+            border: 1px solid var(--border-sub);
+            border-radius: 4px;
+            padding: 20px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .card-title {
+            font-size: 10px;
+            letter-spacing: 0.16em;
+            color: var(--gold);
+            text-transform: uppercase;
+        }
+
+        .card-status {
+            font-size: 9px;
+            letter-spacing: 0.12em;
+            color: var(--text-dim);
+            border: 1px solid var(--border-sub);
+            padding: 2px 6px;
+            border-radius: 2px;
+        }
+
+        /* 3D Visualizer Mock */
+        .visualizer-container {
+            height: 260px;
+            background: radial-gradient(circle at 40% 50%, rgba(45, 212, 191, 0.08) 0%, rgba(10, 12, 16, 0.95) 70%), var(--surface2);
+            border: 1px solid var(--border-sub);
+            border-radius: 3px;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        .topo-svg {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+
+        .topo-node {
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .topo-node:hover circle.pulse {
+            stroke: var(--gold);
+            stroke-width: 2px;
+        }
+
+        .viz-overlay {
+            position: absolute;
+            bottom: 12px;
+            left: 12px;
+            right: 12px;
+            display: flex;
+            justify-content: space-between;
+            font-size: 9px;
+            color: var(--text-dim);
+            background: rgba(10, 12, 16, 0.75);
+            padding: 6px 10px;
+            border-radius: 2px;
+            backdrop-filter: blur(4px);
+            border: 1px solid var(--border-sub);
+        }
+
+        /* Nkap Sapphire Card */
+        .nkap-card-sapphire {
+            background: linear-gradient(135deg, #0a0c10 0%, #101c33 100%);
+            border: 1px solid rgba(96, 165, 250, 0.3);
+            border-radius: 6px;
+            padding: 22px;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            box-shadow: 0 0 25px rgba(96, 165, 250, 0.08);
+            position: relative;
+        }
+
+        .nkap-card-sapphire::after {
+            content: '';
+            position: absolute;
+            top: 0; right: 0; bottom: 0; left: 0;
+            background: radial-gradient(circle at 80% 20%, rgba(96, 165, 250, 0.12) 0%, transparent 60%);
+            pointer-events: none;
+        }
+
+        .tier-badge-sapphire {
+            font-size: 9px;
+            letter-spacing: 0.14em;
+            color: #60a5fa;
+            background: rgba(96, 165, 250, 0.1);
+            border: 1px solid rgba(96, 165, 250, 0.3);
+            padding: 3px 8px;
+            border-radius: 2px;
+        }
+
+        .progress-bar-bg {
+            width: 100%;
+            height: 4px;
+            background: var(--surface3);
+            border-radius: 2px;
+            overflow: hidden;
+            margin-top: 6px;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            background: #60a5fa;
+            box-shadow: 0 0 10px #60a5fa;
+        }
+
+        /* Launchpad Section */
+        .launchpad-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+        }
+
+        @media (max-width: 1100px) {
+            .launchpad-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 700px) {
+            .launchpad-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .product-card {
+            background: var(--surface2);
+            border: 1px solid var(--border-sub);
+            border-radius: 4px;
+            padding: 18px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            transition: border-color 0.2s;
+        }
+
+        .product-card.active {
+            border-color: var(--border);
+            box-shadow: 0 0 15px rgba(201, 168, 76, 0.05);
+        }
+
+        .product-card.locked {
+            opacity: 0.75;
+            background: var(--surface);
+            border-style: dashed;
+        }
+
+        .badge {
+            font-size: 8px;
+            padding: 2px 6px;
+            border-radius: 2px;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+        }
+
+        .badge-active {
+            color: var(--teal);
+            background: rgba(45, 212, 191, 0.1);
+            border: 1px solid rgba(45, 212, 191, 0.3);
+        }
+
+        .badge-design {
+            color: var(--amber);
+            background: rgba(251, 191, 36, 0.1);
+            border: 1px solid rgba(251, 191, 36, 0.3);
+        }
+
+        .badge-locked {
+            color: var(--text-dim);
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid var(--border-sub);
+        }
+
+        .btn {
+            display: inline-block;
+            width: 100%;
+            text-align: center;
+            padding: 8px 12px;
+            font-family: var(--font-mono);
+            font-size: 10px;
+            letter-spacing: 0.1em;
+            text-decoration: none;
+            border-radius: 2px;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-top: 14px;
+        }
+
+        .btn-gold {
+            background: var(--surface3);
+            border: 1px solid var(--gold-dim);
+            color: var(--gold);
+        }
+
+        .btn-gold:hover {
+            background: var(--gold-dim);
+            color: var(--bg);
+        }
+
+        .btn-disabled {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--border-sub);
+            color: var(--text-muted);
+            cursor: not-allowed;
+        }
+
+        /* Ledger Table */
+        .ledger-table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+        }
+
+        .ledger-table th {
+            font-size: 9px;
+            letter-spacing: 0.14em;
+            color: var(--text-dim);
+            padding: 10px 12px;
+            border-bottom: 1px solid var(--border-sub);
+            font-weight: 400;
+        }
+
+        .ledger-table td {
+            padding: 10px 12px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+            color: var(--text);
+            font-size: 10px;
+        }
+
+        .ledger-table tr:hover td {
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        .tag {
+            font-size: 8px;
+            padding: 1px 5px;
+            border-radius: 2px;
+            letter-spacing: 0.08em;
+        }
+
+        .tag-roms { color: var(--teal); border: 1px solid rgba(45, 212, 191, 0.3); }
+        .tag-nkap { color: var(--gold); border: 1px solid rgba(201, 168, 76, 0.3); }
+        .tag-auth { color: var(--purple); border: 1px solid rgba(167, 139, 250, 0.3); }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="brand-logo">
+            <span class="logo-title">TERRA</span>
+            <span class="nav-badge">COMMAND MATRIX // V1.0</span>
+        </div>
+        <div class="user-nav">
+            <div class="nkap-pill">
+                <span class="nkap-pill-label">NKAP TREASURY</span>
+                <span class="nkap-pill-val">◈ 142,850.00</span>
+            </div>
+            <div class="user-profile">
+                <span>ALEXANDER VANCE</span>
+                <span style="font-size: 8px; color: var(--gold);">[SAPPHIRE]</span>
+            </div>
+        </div>
+    </header>
+
+    <main class="dashboard-grid">
+        
+        <!-- TOP ROW: Visualizer + Nkap Card -->
+        <section class="top-row">
+            
+            <!-- 3D Topology Canvas Mock -->
+            <div class="card">
+                <div class="card-header">
+                    <span class="card-title">// ECOSYSTEM TOPOLOGY (SCOPED)</span>
+                    <span class="card-status">ACTIVE NODES: 01 / 06</span>
+                </div>
+                
+                <div class="visualizer-container">
+                    <svg class="topo-svg" viewBox="0 0 600 260">
+                        <defs>
+                            <linearGradient id="lineGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <stop offset="0%" stop-color="#2dd4bf" stop-opacity="0.6"/>
+                                <stop offset="100%" stop-color="#c9a84c" stop-opacity="0.1"/>
+                            </linearGradient>
+                            <filter id="glow">
+                                <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+                                <feMerge>
+                                    <feMergeNode in="coloredBlur"/>
+                                    <feMergeNode in="SourceGraphic"/>
+                                </feMerge>
+                            </filter>
+                        </defs>
+
+                        <!-- Background Grid -->
+                        <path d="M 0,130 L 600,130 M 300,0 L 300,260" stroke="rgba(255,255,255,0.03)" stroke-width="1"/>
+                        <circle cx="300" cy="130" r="80" stroke="rgba(201,168,76,0.05)" fill="none" stroke-dasharray="4 4"/>
+                        <circle cx="300" cy="130" r="140" stroke="rgba(201,168,76,0.03)" fill="none"/>
+
+                        <!-- Connections -->
+                        <line x1="300" y1="130" x2="180" y2="80" stroke="url(#lineGrad)" stroke-width="1.5" filter="url(#glow)"/>
+                        <line x1="300" y1="130" x2="420" y2="80" stroke="rgba(255,255,255,0.08)" stroke-width="1" stroke-dasharray="2 2"/>
+                        <line x1="300" y1="130" x2="150" y2="180" stroke="rgba(255,255,255,0.08)" stroke-width="1" stroke-dasharray="2 2"/>
+                        <line x1="300" y1="130" x2="450" y2="180" stroke="rgba(255,255,255,0.08)" stroke-width="1" stroke-dasharray="2 2"/>
+                        <line x1="300" y1="130" x2="300" y2="210" stroke="rgba(255,255,255,0.08)" stroke-width="1" stroke-dasharray="2 2"/>
+
+                        <!-- Central Hub Node -->
+                        <g transform="translate(300, 130)" class="topo-node">
+                            <circle r="12" fill="#111318" stroke="#c9a84c" stroke-width="1.5"/>
+                            <circle r="4" fill="#c9a84c"/>
+                            <text x="0" y="24" fill="#c9a84c" font-family="JetBrains Mono" font-size="8" text-anchor="middle" letter-spacing="1">TERRA CORE</text>
+                        </g>
+
+                        <!-- Active Node: ROMS -->
+                        <g transform="translate(180, 80)" class="topo-node">
+                            <circle class="pulse" r="16" fill="rgba(45, 212, 191, 0.15)" stroke="#2dd4bf" stroke-width="2" filter="url(#glow)"/>
+                            <circle r="6" fill="#2dd4bf"/>
+                            <text x="0" y="-22" fill="#2dd4bf" font-family="JetBrains Mono" font-size="9" font-weight="600" text-anchor="middle" letter-spacing="1">ROMS [ACTIVE]</text>
+                        </g>
+
+                        <!-- Locked Nodes -->
+                        <g transform="translate(420, 80)" class="topo-node">
+                            <circle r="8" fill="#111318" stroke="#7a7570" stroke-width="1" stroke-dasharray="2 2"/>
+                            <text x="0" y="-14" fill="#7a7570" font-family="JetBrains Mono" font-size="8" text-anchor="middle">PIOS (DESIGN)</text>
+                        </g>
+
+                        <g transform="translate(150, 180)" class="topo-node">
+                            <circle r="8" fill="#111318" stroke="#4a4744" stroke-width="1"/>
+                            <text x="0" y="20" fill="#4a4744" font-family="JetBrains Mono" font-size="8" text-anchor="middle">REAL ESTATE</text>
+                        </g>
+
+                        <g transform="translate(450, 180)" class="topo-node">
+                            <circle r="8" fill="#111318" stroke="#4a4744" stroke-width="1"/>
+                            <text x="0" y="20" fill="#4a4744" font-family="JetBrains Mono" font-size="8" text-anchor="middle">AGRICULTURE</text>
+                        </g>
+
+                        <g transform="translate(300, 210)" class="topo-node">
+                            <circle r="8" fill="#111318" stroke="#4a4744" stroke-width="1"/>
+                            <text x="0" y="20" fill="#4a4744" font-family="JetBrains Mono" font-size="8" text-anchor="middle">APPAREL</text>
+                        </g>
+                    </svg>
+
+                    <div class="viz-overlay">
+                        <span>FOCUS: ALL PRODUCTS</span>
+                        <span>INTERACTION: CLICK NODE TO FILTER WORKSPACES</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Nkap Card -->
+            <div class="nkap-card-sapphire">
+                <div>
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                        <div>
+                            <span style="font-family: var(--font-serif); font-size: 18px; letter-spacing: 0.25em; color: var(--text);">TERRA</span>
+                            <div style="font-size: 8px; color: var(--text-dim); letter-spacing: 0.12em; margin-top: 2px;">NKAP TREASURY PASS</div>
+                        </div>
+                        <span class="tier-badge-sapphire">SAPPHIRE</span>
+                    </div>
+
+                    <div style="margin-top: 28px;">
+                        <div style="font-size: 8px; color: var(--text-dim); letter-spacing: 0.12em;">UNIFIED BALANCE</div>
+                        <div style="font-size: 24px; font-weight: 500; color: var(--text); letter-spacing: 0.04em; margin-top: 4px;">
+                            ◈ 142,850.00 <span style="font-size: 10px; color: #60a5fa;">NKAP</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <div style="display: flex; justify-content: space-between; font-size: 8px; color: var(--text-dim); margin-bottom: 4px;">
+                        <span>TIER PROGRESS</span>
+                        <span>82% TO DIAMOND</span>
+                    </div>
+                    <div class="progress-bar-bg">
+                        <div class="progress-bar-fill" style="width: 82%;"></div>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; margin-top: 12px; font-size: 9px; color: var(--text-dim);">
+                        <span>CARD HOLDER: A. VANCE</span>
+                        <span style="color: var(--teal);">PERKS: 1.5X YIELD</span>
+                    </div>
+                </div>
+            </div>
+
+        </section>
+
+        <!-- MIDDLE ROW: Launchpad Grid -->
+        <section class="card">
+            <div class="card-header">
+                <span class="card-title">// PRODUCT WORKSPACES</span>
+                <span class="card-status">SHOWING: ALL VERTICALS</span>
+            </div>
+
+            <div class="launchpad-grid">
+                
+                <!-- ROMS (Active) -->
+                <div class="product-card active">
+                    <div>
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                            <span style="font-family: var(--font-serif); font-size: 18px; letter-spacing: 0.1em; color: var(--text);">ROMS</span>
+                            <span class="badge badge-active">ACTIVE</span>
+                        </div>
+                        <p style="color: var(--text-dim); font-size: 10px; margin-bottom: 16px;">Property & Real Estate Management Operations</p>
+                        
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 16px;">
+                            <div style="background: var(--surface); padding: 8px; border-radius: 2px;">
+                                <div style="font-size: 8px; color: var(--text-dim);">MANAGED UNITS</div>
+                                <div style="font-size: 14px; color: var(--text); font-weight: 500; margin-top: 2px;">12</div>
+                            </div>
+                            <div style="background: var(--surface); padding: 8px; border-radius: 2px;">
+                                <div style="font-size: 8px; color: var(--text-dim);">OCCUPANCY</div>
+                                <div style="font-size: 14px; color: var(--green); font-weight: 500; margin-top: 2px;">94.2%</div>
+                            </div>
+                        </div>
+                    </div>
+                    <a href="#" class="btn btn-gold">LAUNCH WORKSPACE ↗</a>
+                </div>
+
+                <!-- PIOS (In Design) -->
+                <div class="product-card locked">
+                    <div>
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                            <span style="font-family: var(--font-serif); font-size: 18px; letter-spacing: 0.1em; color: var(--text-dim);">PIOS</span>
+                            <span class="badge badge-design">IN DESIGN</span>
+                        </div>
+                        <p style="color: var(--text-muted); font-size: 10px; margin-bottom: 16px;">Personal Investment & Portfolio Allocation System</p>
+                        
+                        <div style="background: var(--surface2); padding: 10px; border-radius: 2px; border: 1px solid var(--border-sub); margin-bottom: 12px;">
+                            <div style="font-size: 8px; color: var(--amber);">EARLY ACCESS STATUS</div>
+                            <div style="font-size: 10px; color: var(--text-dim); margin-top: 4px;">Waitlist Position: #142 (Unlocked at Sapphire)</div>
+                        </div>
+                    </div>
+                    <button class="btn btn-disabled" disabled>PREVIEW LOCKED</button>
+                </div>
+
+                <!-- Real Estate Holdings -->
+                <div class="product-card locked">
+                    <div>
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                            <span style="font-family: var(--font-serif); font-size: 18px; letter-spacing: 0.1em; color: var(--text-dim);">REAL ESTATE</span>
+                            <span class="badge badge-locked">PLANNED</span>
+                        </div>
+                        <p style="color: var(--text-muted); font-size: 10px; margin-bottom: 16px;">Direct Fractional Real Estate Acquisition</p>
+                    </div>
+                    <button class="btn btn-disabled" disabled>NOT AVAILABLE</button>
+                </div>
+
+                <!-- Agriculture -->
+                <div class="product-card locked">
+                    <div>
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                            <span style="font-family: var(--font-serif); font-size: 18px; letter-spacing: 0.1em; color: var(--text-dim);">AGRICULTURE</span>
+                            <span class="badge badge-locked">PLANNED</span>
+                        </div>
+                        <p style="color: var(--text-muted); font-size: 10px; margin-bottom: 16px;">Agri-Tech Infrastructure & Farmland Yields</p>
+                    </div>
+                    <button class="btn btn-disabled" disabled>NOT AVAILABLE</button>
+                </div>
+
+                <!-- Apparel -->
+                <div class="product-card locked">
+                    <div>
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                            <span style="font-family: var(--font-serif); font-size: 18px; letter-spacing: 0.1em; color: var(--text-dim);">APPAREL</span>
+                            <span class="badge badge-locked">PLANNED</span>
+                        </div>
+                        <p style="color: var(--text-muted); font-size: 10px; margin-bottom: 16px;">Luxury Private-Label Goods & Physical Access Cards</p>
+                    </div>
+                    <button class="btn btn-disabled" disabled>NOT AVAILABLE</button>
+                </div>
+
+                <!-- Ventures -->
+                <div class="product-card locked">
+                    <div>
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                            <span style="font-family: var(--font-serif); font-size: 18px; letter-spacing: 0.1em; color: var(--text-dim);">VENTURES</span>
+                            <span class="badge badge-locked">PLANNED</span>
+                        </div>
+                        <p style="color: var(--text-muted); font-size: 10px; margin-bottom: 16px;">Ecosystem Incubator & Africa Growth Fund</p>
+                    </div>
+                    <button class="btn btn-disabled" disabled>NOT AVAILABLE</button>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- BOTTOM ROW: Activity Ledger -->
+        <section class="card">
+            <div class="card-header">
+                <span class="card-title">// UNIFIED ACTIVITY LEDGER</span>
+                <span class="card-status">CROSS-PRODUCT FEED</span>
+            </div>
+
+            <table class="ledger-table">
+                <thead>
+                    <tr>
+                        <th>TIMESTAMP</th>
+                        <th>SOURCE</th>
+                        <th>EVENT DESCRIPTION</th>
+                        <th>NKAP IMPACT</th>
+                        <th>STATUS</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td style="color: var(--text-dim);">2026-08-01 11:42:05</td>
+                        <td><span class="tag tag-roms">ROMS</span></td>
+                        <td>Monthly Disbursement Received (Property #04 - Douala Commercial)</td>
+                        <td style="color: var(--green);">+2,400.00 NKAP</td>
+                        <td style="color: var(--teal);">COMPLETED</td>
+                    </tr>
+                    <tr>
+                        <td style="color: var(--text-dim);">2026-07-28 09:15:22</td>
+                        <td><span class="tag tag-nkap">NKAP</span></td>
+                        <td>Tier Qualification Upgrade (Platinum ➔ Sapphire)</td>
+                        <td style="color: var(--gold);">TIER UPGRADE</td>
+                        <td style="color: var(--teal);">VERIFIED</td>
+                    </tr>
+                    <tr>
+                        <td style="color: var(--text-dim);">2026-07-15 14:02:11</td>
+                        <td><span class="tag tag-auth">AUTH</span></td>
+                        <td>New JWT API Token Issued (Role: Admin / Scope: ROMS)</td>
+                        <td style="color: var(--text-dim);">--</td>
+                        <td style="color: var(--teal);">SUCCESS</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+    </main>
+
+</body>
+</html>
