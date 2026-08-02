@@ -27,10 +27,20 @@ work, TFE-301/302/303) — even that's a single seeded row, not self-service reg
 Don't build a Sign Up page until that backend work exists to register against.
 
 ## Phase 2 - Same-Origin Deploy Wiring (spans this repo + terra-api)
-- [ ] TFE-201 - Jenkins: build this repo (`npm install && npm run build`), copy `build/` into
+- [x] TFE-201 - Jenkins: build this repo (`npm ci && npm run build`), copy `build/` into
       terra-api's `src/main/resources/static` before terra-api's jar is packaged
       (terra-api-adr-009, 2026-07-24 Update #2). Lives in terra-api's Jenkinsfile, tracked here
-      since it's this repo's deploy dependency.
+      since it's this repo's deploy dependency. **Live-verified 2026-08-02**: full pipeline green
+      end-to-end on `phase-7-frontend-ci-integration` build #2 (Checkout Frontend → Build Frontend
+      → Test Frontend → Copy Frontend Build → gradle Build/Test → Docker image → Push → Deploy to
+      Staging), staging containers confirmed `Up`/healthy on the real EC2 box. Two lockfile bugs
+      fixed first (typescript floated to an incompatible major via an unpinned optional peer dep,
+      tailwindcss/yaml peer conflict) — both closed via `rm -rf node_modules package-lock.json &&
+      npm install` plus a `typescript` override pin; full detail in `DEV_LOG.md`. Also added this
+      repo's own CI-only `Jenkinsfile` (checkout/build/test, no deploy — same-origin means no
+      independent artifact) and split both repos' Jenkins jobs into `-main`/`-branches` pairs for
+      organizational clarity. `phase-1-auth-shell` merged into `main` as a prerequisite, since
+      Jenkins builds `main` and Phase 1 hadn't landed there yet.
 
 ## Phase 3 - Backend Health, Entitlement & Role Claim (terra-api repo, not this one)
 - [ ] TFE-301 - `GET /api/v1/ecosystem/health` endpoint (terra-api-adr-005 amendment).
