@@ -1,0 +1,99 @@
+/* Visualizer container — restyled 2026-08-02 away from the phase5 "space scene" look.
+   The starfield, fog, and painted background are gone; the ground is a quiet CSS gradient so
+   the diagram sits on the card surface rather than in its own window. */
+
+.cm-visualizer {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  min-height: 300px;
+  /* Barely-there radial lift, off-centre so it reads as light falling across a surface
+     rather than a vignette. */
+  background:
+    radial-gradient(120% 100% at 30% 0%, rgba(255, 255, 255, 0.035) 0%, transparent 55%),
+    var(--surface2, #181c24);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+:root[data-theme='light'] .cm-visualizer {
+  background:
+    radial-gradient(120% 100% at 30% 0%, rgba(0, 0, 0, 0.03) 0%, transparent 55%),
+    var(--surface2, #d4d0ca);
+}
+
+.cm-topo-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* Hover tooltip. pointer-events: none is essential — a label under the cursor would block
+   the raycast that placed it, making it flicker as it fights itself. */
+.cm-topo-hover-label {
+  position: absolute;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+  background: var(--surface, #111318);
+  border: 1px solid var(--border-sub, rgba(255, 255, 255, 0.08));
+  color: var(--text, #e8e4dc);
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  padding: 7px 11px;
+  border-radius: 6px;
+  white-space: nowrap;
+  z-index: 2;
+  /* Real elevation rather than a flat outline — the single clearest "considered product"
+     cue, and what separates a tooltip from a debug label. */
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+}
+
+/* The drag hint is scaffolding, not content. Near-invisible until hover so it teaches on
+   approach and then gets out of the way. */
+.cm-viz-hint {
+  position: absolute;
+  right: 14px;
+  bottom: 12px;
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 8px;
+  letter-spacing: 0.14em;
+  color: var(--text-muted, #4a4744);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.25s ease;
+}
+
+.cm-visualizer:hover .cm-viz-hint {
+  opacity: 0.55;
+}
+
+/* Empty state. Previously the card just showed a lone anchor cube with no explanation, which
+   read as "broken" rather than "nothing to show". */
+.cm-viz-empty {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  text-align: center;
+  pointer-events: none;
+}
+
+.cm-viz-empty-title {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-dim, #7a7570);
+}
+
+.cm-viz-empty-note {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  color: var(--text-muted, #4a4744);
+}

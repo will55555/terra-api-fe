@@ -1,0 +1,528 @@
+/* Command Matrix shell — Concept AB (accepted 2026-08-01).
+   Tokens extracted from design-reference/terra_dashboard_state_a.html, with the light
+   palette taken from terra-hq-site so both surfaces read as one product. */
+
+/* Dark is the default. Tokens live on :root rather than .command-matrix so the page
+   background changes too — a dark card on a white body is the flash this avoids. */
+:root {
+  --bg: #0a0c10;
+  --surface: #111318;
+  --surface2: #181c24;
+  --gold: #c9a84c;
+  --gold-glow: rgba(201, 168, 76, 0.1);
+  --teal: #2dd4bf;
+  /* Used by the IN-DESIGN badge and by the Nkap tier ladder — Platinum maps to --teal,
+     Diamond to --purple, Sapphire to --blue (colour mapping accepted 2026-08-01). */
+  --amber: #fbbf24;
+  --purple: #a78bfa;
+  --blue: #60a5fa;
+  --text: #e8e4dc;
+  --text-dim: #7a7570;
+  --text-muted: #4a4744;
+  --border: rgba(201, 168, 76, 0.18);
+  --border-sub: rgba(255, 255, 255, 0.06);
+  --font-serif: 'Cormorant Garamond', serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+}
+
+/* Light palette taken verbatim from terra-hq-site's [data-theme="light"] block so both
+   surfaces read as one product. Only the neutrals flip: gold/teal/amber/purple/blue are
+   brand and status colours that must mean the same thing in either theme — remapping them
+   per-theme would break the health-tier semantics the visualizer depends on. */
+:root[data-theme='light'] {
+  --bg: #e5e1dc;
+  --surface: #ddd9d4;
+  --surface2: #d4d0ca;
+  --text: #1a1410;
+  --text-dim: #5c5652;
+  --text-muted: #8a837e;
+  /* Borders invert: a white-on-black hairline is invisible on a light ground. */
+  --border-sub: rgba(0, 0, 0, 0.08);
+  --gold-glow: rgba(201, 168, 76, 0.16);
+}
+
+.command-matrix {
+  background-color: var(--bg);
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  line-height: 1.5;
+  padding: 20px;
+  min-height: 100vh;
+  box-sizing: border-box;
+}
+
+.command-matrix *,
+.command-matrix *::before,
+.command-matrix *::after {
+  box-sizing: border-box;
+}
+
+/* ─── Header ─────────────────────────────────────────────────────── */
+
+.cm-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 16px;
+  margin-bottom: 24px;
+  border-bottom: 1px solid var(--border-sub);
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.cm-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.cm-logo-title {
+  font-family: var(--font-serif);
+  font-size: 22px;
+  letter-spacing: 0.3em;
+  color: var(--accent, var(--gold));
+  text-transform: uppercase;
+}
+
+.cm-nav-badge {
+  font-size: 9px;
+  letter-spacing: 0.14em;
+  color: var(--text-dim);
+  border: 1px solid var(--border-sub);
+  padding: 2px 8px;
+  border-radius: 2px;
+  background: var(--surface);
+}
+
+.cm-signout {
+  background: none;
+  border: 1px solid var(--border-sub);
+  color: var(--text-dim);
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  padding: 4px 10px;
+  border-radius: 2px;
+  cursor: pointer;
+}
+
+.cm-signout:hover {
+  color: var(--text);
+  border-color: var(--border);
+}
+
+/* ─── Layout ─────────────────────────────────────────────────────── */
+
+/* Robinhood-style page rhythm: a max-width column centred in the viewport rather than
+   edge-to-edge. Concept AB's mockup was full-bleed, which reads fine at 1280px and becomes
+   an unreadable sprawl on a wide monitor. */
+.cm-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+  max-width: 1400px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+/* 60/40 split per Concept AB. Collapses below 900px so the visualizer keeps a usable
+   aspect ratio rather than being squeezed into a sliver. */
+.cm-top-row {
+  display: grid;
+  grid-template-columns: 6fr 4fr;
+  gap: 20px;
+}
+
+@media (max-width: 900px) {
+  .cm-top-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ─── Card ───────────────────────────────────────────────────────── */
+
+/* Card treatment merges Concept AB with Robinhood Gold's spatial language: AB's surface,
+   hairline border, and mono type are kept; the radius and padding grow (4px -> 10px,
+   16px -> 26px) so cards read as generous panels rather than dense terminal boxes. The
+   density stays in the TYPE — small caps, wide tracking — which is what makes it still feel
+   like AB rather than a generic SaaS dashboard. */
+.cm-card {
+  background: var(--surface);
+  border: 1px solid var(--border-sub);
+  border-radius: 10px;
+  padding: 26px;
+  position: relative;
+}
+
+/* Accent hairline along the top edge — Robinhood Gold uses accent as a structural element
+   rather than only for text. Tier-driven, so a Platinum customer's cards edge teal and a
+   Diamond's purple. Scoped to the top 1px so it reads as a seam, not a frame. */
+.cm-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 10px;
+  right: 10px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--accent, var(--gold)), transparent);
+  opacity: 0.4;
+}
+
+/* Placeholder cards get no accent seam — the seam signals "this is live". */
+.cm-card.cm-placeholder::before {
+  display: none;
+}
+
+.cm-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  gap: 12px;
+}
+
+.cm-card-title {
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  color: var(--accent, var(--gold));
+  text-transform: uppercase;
+}
+
+/* Dashed border marks a card as not-yet-wired. Same visual language Concept AB uses for
+   locked products, so "unbuilt" reads consistently across the page. */
+.cm-placeholder {
+  border-style: dashed;
+  border-color: var(--text-muted);
+}
+
+.cm-placeholder-note {
+  margin: 0;
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  color: var(--text-muted);
+  text-transform: uppercase;
+}
+
+/* ─── Product launchpad ──────────────────────────────────────────── */
+
+.cm-launchpad-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+@media (max-width: 1100px) {
+  .cm-launchpad-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 700px) {
+  .cm-launchpad-grid { grid-template-columns: 1fr; }
+}
+
+.cm-product-card {
+  background: var(--surface2);
+  border: 1px solid var(--border-sub);
+  border-radius: 4px;
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 12px;
+  transition: border-color 0.2s;
+}
+
+.cm-product-card.is-active {
+  border-color: var(--border);
+  box-shadow: 0 0 18px var(--accent-glow, rgba(201, 168, 76, 0.05));
+}
+
+/* Dashed + dimmed marks "not available to you yet" — same visual language the topology uses
+   for unbuilt domains, so locked reads consistently across the page. */
+.cm-product-card.is-locked {
+  opacity: 0.75;
+  background: var(--surface);
+  border-style: dashed;
+}
+
+.cm-product-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  gap: 8px;
+}
+
+.cm-product-name {
+  font-family: var(--font-serif);
+  font-size: 18px;
+  letter-spacing: 0.1em;
+  color: var(--text);
+}
+
+.cm-product-card.is-locked .cm-product-name { color: var(--text-dim); }
+
+.cm-product-desc {
+  color: var(--text-dim);
+  font-size: 10px;
+  margin: 0 0 16px;
+}
+
+.cm-product-card.is-locked .cm-product-desc { color: var(--text-muted); }
+
+.cm-product-live {
+  background: var(--surface);
+  padding: 8px;
+  border-radius: 2px;
+  margin-bottom: 12px;
+}
+
+.cm-product-live-label {
+  font-size: 8px;
+  color: var(--text-dim);
+  letter-spacing: 0.12em;
+}
+
+.cm-product-live-value {
+  font-size: 14px;
+  color: var(--text);
+  font-weight: 500;
+  margin-top: 2px;
+}
+
+.cm-product-note {
+  font-size: 9px;
+  color: var(--text-muted);
+  margin: 0 0 12px;
+  line-height: 1.6;
+}
+
+.cm-badge {
+  font-size: 8px;
+  padding: 2px 6px;
+  border-radius: 2px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.cm-badge-active {
+  color: var(--teal);
+  background: rgba(45, 212, 191, 0.1);
+  border: 1px solid rgba(45, 212, 191, 0.3);
+}
+
+.cm-badge-design {
+  color: var(--amber);
+  background: rgba(251, 191, 36, 0.1);
+  border: 1px solid rgba(251, 191, 36, 0.3);
+}
+
+.cm-badge-locked {
+  color: var(--text-muted);
+  background: transparent;
+  border: 1px solid var(--border-sub);
+}
+
+.cm-btn {
+  width: 100%;
+  padding: 8px;
+  border-radius: 2px;
+  border: 1px solid var(--border);
+  background: var(--accent-glow, var(--gold-glow));
+  color: var(--accent, var(--gold));
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.14em;
+  cursor: pointer;
+}
+
+.cm-btn:hover:not(.cm-btn-disabled) { background: var(--accent-dim, rgba(201, 168, 76, 0.18)); }
+
+.cm-btn-disabled {
+  border-color: var(--border-sub);
+  background: transparent;
+  color: var(--text-muted);
+  cursor: not-allowed;
+}
+
+/* ─── Nkap card ──────────────────────────────────────────────────── */
+
+.cm-nkap-card {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.cm-nkap-balance-region {
+  padding: 12px 0 20px;
+}
+
+.cm-nkap-balance-placeholder {
+  font-family: var(--font-serif);
+  font-size: 40px;
+  font-weight: 300;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+  line-height: 1.1;
+}
+
+.cm-nkap-sub {
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  color: var(--text-muted);
+  margin-top: 6px;
+}
+
+.cm-nkap-tiers {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  border-top: 1px solid var(--border-sub);
+  padding-top: 14px;
+}
+
+.cm-nkap-tier {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.cm-nkap-tier-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.cm-nkap-tier-name {
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  color: var(--text-dim);
+  text-transform: uppercase;
+}
+
+.cm-card-status {
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  color: var(--text-dim);
+}
+
+/* Theme toggle — mirrors terra-hq-site's affordance. */
+.cm-theme-toggle {
+  background: none;
+  border: 1px solid var(--border-sub);
+  color: var(--text-dim);
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  padding: 4px 10px;
+  border-radius: 2px;
+  cursor: pointer;
+}
+
+.cm-theme-toggle:hover {
+  color: var(--text);
+  border-color: var(--border);
+}
+
+/* Smooth the flip rather than snapping — the whole page repaints at once, and an instant
+   swap reads as a glitch. Deliberately excludes the canvas, whose background is repainted
+   imperatively by the scene. */
+.command-matrix,
+.cm-card,
+.cm-product-card {
+  transition: background-color 0.25s ease, border-color 0.25s ease, color 0.25s ease;
+}
+
+/* ─── Tier badge ─────────────────────────────────────────────────── */
+
+/* Robinhood Gold puts membership standing in the header as a persistent, accent-filled
+   pill. Borrowed directly: it is the clearest signal of "which tier am I", and it makes the
+   page-wide accent legible as a tier rather than as an arbitrary brand colour. */
+.cm-tier-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 9px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--accent, var(--gold));
+  background: var(--accent-glow, var(--gold-glow));
+  border: 1px solid var(--accent-dim, var(--border));
+  padding: 5px 12px;
+  border-radius: 999px;
+}
+
+.cm-tier-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent, var(--gold));
+  flex-shrink: 0;
+}
+
+/* ─── Display type ───────────────────────────────────────────────── */
+
+/* Robinhood's other borrowed quality: numbers are large and quiet rather than small and
+   dense. Concept AB already sized the Nkap balance at 40px; this generalises that so any
+   headline figure shares the treatment. */
+.cm-display-value {
+  font-family: var(--font-serif);
+  font-size: 38px;
+  font-weight: 300;
+  letter-spacing: 0.03em;
+  line-height: 1.1;
+  color: var(--text);
+}
+
+.cm-display-label {
+  font-size: 9px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  margin-bottom: 6px;
+}
+
+/* ─── Premium pass (2026-08-02) ───────────────────────────────────────
+   Three fixes for the "toyish" read: elevation (flat outlines look like wireframes),
+   type contrast (everything was 9-11px dim mono, so nothing led), and density
+   (whitespace should surround content, not replace it). */
+
+.cm-card {
+  box-shadow: 0 1px 2px rgba(0,0,0,0.28), 0 8px 28px rgba(0,0,0,0.22);
+}
+
+:root[data-theme='light'] .cm-card {
+  box-shadow: 0 1px 2px rgba(0,0,0,0.05), 0 8px 28px rgba(0,0,0,0.06);
+}
+
+.cm-card-title { font-size: 10px; letter-spacing: 0.18em; font-weight: 500; }
+.cm-card-header { margin-bottom: 22px; }
+
+/* Serif at 18px competed with the mono around it. Larger and lighter makes product names
+   the clear focal point of each card. */
+.cm-product-name { font-size: 21px; font-weight: 300; letter-spacing: 0.06em; }
+.cm-product-card { border-radius: 8px; padding: 22px; }
+
+.cm-product-live {
+  border: 1px solid var(--border-sub);
+  border-radius: 6px;
+  padding: 10px 12px;
+}
+.cm-product-live-value { font-size: 15px; letter-spacing: 0.04em; }
+
+.cm-btn { padding: 11px; border-radius: 6px; font-weight: 500; transition: background 0.18s ease, border-color 0.18s ease; }
+
+/* Nkap card was the worst offender: placeholder, then a large void, then the tier list
+   pinned to the bottom by space-between. Content now groups at the top. */
+.cm-nkap-card { justify-content: flex-start; gap: 26px; }
+.cm-nkap-balance-region { padding: 0; }
+.cm-nkap-balance-placeholder { font-size: 34px; letter-spacing: 0.02em; opacity: 0.45; }
+.cm-nkap-tiers { gap: 11px; padding-top: 20px; }
+
+/* Current tier gets full weight; others recede — otherwise the ladder reads as five equal
+   options rather than "you are here". */
+.cm-nkap-tier-name { font-size: 10px; opacity: 0.55; }
+.cm-nkap-tier.is-current .cm-nkap-tier-name { opacity: 1; color: var(--text); font-weight: 500; }
+.cm-nkap-tier.is-current .cm-nkap-tier-dot { box-shadow: 0 0 0 3px var(--accent-glow, rgba(201,168,76,0.12)); }
