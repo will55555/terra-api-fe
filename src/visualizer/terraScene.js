@@ -26,7 +26,11 @@ const BG_COLOR = 0x04060f;
 // Light-mode backdrop, matching terra-hq-site's [data-theme="light"] --bg (#e5e1dc).
 const LIGHT_BG_COLOR = 0xe5e1dc;
 const ISO_CAMERA_POS = [5, 5, 5];
-const ZOOM = 6;
+// Frames roughly a 5-unit-wide view. phase5 used 6 (a 12-unit frame) because it renders a
+// 2x2x2 lattice spanning ~2.6 units across a FULL VIEWPORT. The customer ring is smaller
+// (radius 1.45) inside a dashboard card, so the same zoom left the cubes tiny and adrift in
+// empty space — read as "far apart" when the real problem was too much frame around them.
+const ZOOM = 2.6;
 
 // Starfield REMOVED 2026-08-02. It was carried over from phase5, where it belongs — that is
 // a full-viewport marketing showpiece and the stars read as atmosphere. Inside a dashboard
@@ -179,7 +183,9 @@ export function createScene(canvas) {
     const positions = ringPositions(services.length);
 
     services.forEach((service, i) => {
-      const mesh = createCubeMesh({ scale: 0.7, color: UNBUILT_COLOR });
+      // Smaller than the anchor (0.8) so Terra API reads as the thing being orbited. At 0.7
+      // the two sizes were close enough that the hierarchy was ambiguous.
+      const mesh = createCubeMesh({ scale: 0.55, color: UNBUILT_COLOR });
       mesh.position.set(...positions[i]);
       // Domain shown as context, not as the subject: the customer owns ROMS; Hospitality is
       // where it sits.
