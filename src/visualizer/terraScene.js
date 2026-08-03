@@ -27,9 +27,8 @@ import { colorForStatus, shouldPulse, UNBUILT_COLOR } from './healthColors';
 // data (via domainConfig.js), its two-tone palette, the drag-to-rotate math, and the
 // cubeGroup that lets the whole lattice turn as one.
 
-const BG_COLOR = 0x04060f;
-// Light-mode backdrop, matching terra-hq-site's [data-theme="light"] --bg (#e5e1dc).
-const LIGHT_BG_COLOR = 0xe5e1dc;
+// No BG_COLOR constants: the scene background is transparent in both themes (see
+// createScene), so the card CSS owns the ground and the canvas lets it through.
 const ISO_CAMERA_POS = [5, 5, 5];
 // Frame half-height. The lattice spans ±0.65 in centres plus a half-cube on each side, and
 // the isometric projection puts two corners on a diagonal (× ~1.41). At the cube scale below
@@ -230,7 +229,6 @@ export function createScene(canvas) {
   const pointer = new THREE.Vector2();
 
   let isDragging = false;
-  let hasDragged = false;
   let lastX = 0;
   let lastY = 0;
   let autoRotate = true;
@@ -256,7 +254,6 @@ export function createScene(canvas) {
 
   function onPointerDown(event) {
     isDragging = true;
-    hasDragged = false;
     lastX = event.clientX;
     lastY = event.clientY;
     // Stop the idle spin while the user is in control — fighting a drag against an
@@ -271,11 +268,6 @@ export function createScene(canvas) {
       const deltaY = event.clientY - lastY;
       lastX = event.clientX;
       lastY = event.clientY;
-
-      if (Math.abs(deltaX) > 2 || Math.abs(deltaY) > 2) {
-        hasDragged = true;
-      }
-
       cubeGroup.rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), deltaX * ROTATION_SPEED);
       cubeGroup.rotateOnWorldAxis(new THREE.Vector3(1, 0, 0), deltaY * ROTATION_SPEED);
       return;

@@ -26,7 +26,7 @@ export default function NkapCard({ currentTierId = null }) {
     <div className="cm-card cm-nkap-card">
       <TierCorners />
       <div className="cm-card-header">
-        <span className="cm-card-title">// YOUR NKAP</span>
+        <span className="cm-card-title">{'// '}YOUR NKAP</span>
       </div>
 
       <div className="cm-nkap-balance-region">
