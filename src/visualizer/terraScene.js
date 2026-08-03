@@ -31,15 +31,20 @@ const BG_COLOR = 0x04060f;
 // Light-mode backdrop, matching terra-hq-site's [data-theme="light"] --bg (#e5e1dc).
 const LIGHT_BG_COLOR = 0xe5e1dc;
 const ISO_CAMERA_POS = [5, 5, 5];
-// Sized from the geometry rather than guessed. The lattice spans ±0.65 in centres plus a
-// half-cube (0.5) on each side = ±1.15 per axis, and the isometric view puts two corners on
-// a diagonal, so the widest extent is ~1.15 * sqrt(2) ≈ 1.63. A frame of 2.4 leaves a
-// comfortable margin without stranding the diagram in empty space.
-//
-// Both previous values were wrong in opposite directions: phase5's 6 is tuned for a full
-// viewport and left the lattice tiny inside a card, and 2.2 over-corrected until the cubes
-// clipped the canvas edges.
-const ZOOM = 2.4;
+// Frame half-height. The lattice spans ±0.65 in centres plus a half-cube on each side, and
+// the isometric projection puts two corners on a diagonal (× ~1.41). At the cube scale below
+// that is roughly ±1.35, so 3.2 leaves the diagram sitting comfortably inside the card with
+// real margin rather than pressed against the edges.
+const ZOOM = 3.2;
+
+// Domain cubes are drawn smaller than phase5's 1.0. At full size, cubes 1.0 wide with
+// centres 1.3 apart leave only 0.3 of gap, so adjacent cubes nearly touch and the lattice
+// reads as one solid mass rather than eight distinct domains. 0.62 roughly doubles the
+// visible separation while keeping the same corner positions, which is what makes the
+// structure legible at card size. phase5 does not need this because a full viewport gives
+// the eye enough room to separate them.
+const DOMAIN_CUBE_SCALE = 0.62;
+const SERVICE_CUBE_SCALE = 0.3;
 
 // Starfield REMOVED 2026-08-02. It was carried over from phase5, where it belongs — that is
 // a full-viewport marketing showpiece and the stars read as atmosphere. Inside a dashboard
@@ -128,7 +133,7 @@ export function createScene(canvas) {
 
   // Anchor at the centre. Terra API is infrastructure every domain consumes, so it is not a
   // corner — it is what the corners orbit.
-  const anchorMesh = createCubeMesh({ scale: ANCHOR.scale, color: DOMAIN_COLOR });
+  const anchorMesh = createCubeMesh({ scale: DOMAIN_CUBE_SCALE * 0.8, color: DOMAIN_COLOR });
   anchorMesh.position.set(...ANCHOR.position);
   anchorMesh.userData.label = `${ANCHOR.name} — ${ANCHOR.desc}`;
   cubeGroup.add(anchorMesh);
@@ -160,7 +165,7 @@ export function createScene(canvas) {
    */
   function buildLattice() {
     for (const domain of DOMAINS) {
-      const shell = createCubeMesh({ scale: 1, color: DOMAIN_COLOR });
+      const shell = createCubeMesh({ scale: DOMAIN_CUBE_SCALE, color: DOMAIN_COLOR });
       shell.position.set(...domain.position);
       shell.userData.label = `${domain.name} — ${domain.desc}`;
       cubeGroup.add(shell);
@@ -170,7 +175,7 @@ export function createScene(canvas) {
       if (domain.service) {
         // Nested inside its domain shell — the visual statement that a service belongs to a
         // domain rather than sitting beside it.
-        const serviceMesh = createCubeMesh({ scale: 0.5, color: SERVICE_COLOR });
+        const serviceMesh = createCubeMesh({ scale: SERVICE_CUBE_SCALE, color: SERVICE_COLOR });
         serviceMesh.position.set(...domain.position);
         serviceMesh.userData.label = `${domain.service.name} (${domain.name})`;
         cubeGroup.add(serviceMesh);
