@@ -43,9 +43,9 @@ Don't build a Sign Up page until that backend work exists to register against.
       Jenkins builds `main` and Phase 1 hadn't landed there yet.
 
 ## Phase 3 - Backend Health, Entitlement & Role Claim (terra-api repo, not this one)
-- [ ] TFE-301 - `GET /api/v1/ecosystem/health` endpoint (terra-api-adr-005 amendment).
-- [ ] TFE-302 - `customer_service_access` table, seeded single-row (terra-api-adr-011).
-- [ ] TFE-303 - `role`/`aud` JWT claim on `SelfTokenIssuer`/`TokenValidator` (terra-api-adr-010's
+- [x] TFE-301 - `GET /api/v1/ecosystem/health` endpoint (terra-api-adr-005 amendment).
+- [x] TFE-302 - `customer_service_access` table, seeded single-row (terra-api-adr-011).
+- [x] TFE-303 - `role`/`aud` JWT claim on `SelfTokenIssuer`/`TokenValidator` (terra-api-adr-010's
       trigger fired via this build; bundled into this phase for deploy efficiency, not because
       Phase 4 needs it yet).
 
@@ -57,10 +57,10 @@ Don't build a Sign Up page until that backend work exists to register against.
 > — phases 1-4 of it sit in `terra-hq-site/archive/` and are superseded. Both numbers are
 > correct; they count different things. phase5 is the best/current visualizer and is what
 > ADR-009 calls the shared Three.js reference implementation.
-- [ ] TFE-401 - Repurpose `terra-hq-site/terra_api_visualizer_phase5.js`'s Three.js logic into
+- [x] TFE-401 - Repurpose `terra-hq-site/terra_api_visualizer_phase5.js`'s Three.js logic into
       this repo.
-- [ ] TFE-402 - Cube filtering per customer, consuming Phase 3's entitlement-filtered endpoint.
-- [ ] TFE-403 - Health-tier color model (HEALTHY/YELLOW/ORANGE/RED, grey/navy off-state) per
+- [x] TFE-402 - Cube filtering per customer, consuming Phase 3's entitlement-filtered endpoint.
+- [x] TFE-403 - Health-tier color model (HEALTHY/YELLOW/ORANGE/RED, grey/navy off-state) per
       terra-api-adr-009's Consequences section.
 - Note: can start on static/mock data in parallel with Phase 3, switch over once the real
   endpoint exists.
