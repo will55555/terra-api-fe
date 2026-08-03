@@ -36,11 +36,18 @@ export default function EcosystemVisualizer({ statusByServiceId = {}, error = nu
 
     const handleResize = () => scene.resize();
     window.addEventListener('resize', handleResize);
-    // clientWidth is only meaningful after layout — true by the time effects run, but not
-    // when createScene reads it during the same tick.
-    handleResize();
+
+    // ResizeObserver rather than a one-shot call: createScene reads clientWidth during
+    // construction, and if the canvas has not been laid out yet that is 0 — which makes
+    // aspect NaN and collapses the camera frustum, rendering a few enormous clipped cubes.
+    // A single handleResize() after mount only fixes it if layout happened to finish first.
+    // The observer fires whenever the element actually gets its size, and again on every
+    // card resize, so both the initial race and later layout shifts are covered.
+    const observer = new ResizeObserver(handleResize);
+    observer.observe(canvas);
 
     return () => {
+      observer.disconnect();
       window.removeEventListener('resize', handleResize);
       // Three.js holds GPU resources the garbage collector cannot reclaim. Without this,
       // React StrictMode's double-invoked effects leak a second renderer and RAF loop in dev.

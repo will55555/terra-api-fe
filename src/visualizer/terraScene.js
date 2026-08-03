@@ -31,11 +31,15 @@ const BG_COLOR = 0x04060f;
 // Light-mode backdrop, matching terra-hq-site's [data-theme="light"] --bg (#e5e1dc).
 const LIGHT_BG_COLOR = 0xe5e1dc;
 const ISO_CAMERA_POS = [5, 5, 5];
-// Frames roughly a 4.4-unit view. phase5 uses 6 (a 12-unit frame) because it renders
-// full-viewport; inside a dashboard card that left the ~2.6-unit lattice tiny and adrift in
-// empty space, which read as "cubes too far apart" when the real problem was too much frame
-// around them.
-const ZOOM = 2.2;
+// Sized from the geometry rather than guessed. The lattice spans ±0.65 in centres plus a
+// half-cube (0.5) on each side = ±1.15 per axis, and the isometric view puts two corners on
+// a diagonal, so the widest extent is ~1.15 * sqrt(2) ≈ 1.63. A frame of 2.4 leaves a
+// comfortable margin without stranding the diagram in empty space.
+//
+// Both previous values were wrong in opposite directions: phase5's 6 is tuned for a full
+// viewport and left the lattice tiny inside a card, and 2.2 over-corrected until the cubes
+// clipped the canvas edges.
+const ZOOM = 2.4;
 
 // Starfield REMOVED 2026-08-02. It was carried over from phase5, where it belongs — that is
 // a full-viewport marketing showpiece and the stars read as atmosphere. Inside a dashboard
@@ -93,9 +97,13 @@ export function createScene(canvas) {
 
   // Orthographic, not perspective: the isometric look needs parallel lines rather than a
   // vanishing point. Camera at (5,5,5) looking at origin is the classic 35.26° iso angle.
+  // Fall back to a sane 16:10 rather than trusting clientWidth at construction time. If the
+  // canvas has not been laid out yet both are 0, and 0/0 is NaN — which silently produces an
+  // invalid camera frustum rather than throwing. The ResizeObserver in EcosystemVisualizer
+  // corrects these values the moment real layout lands.
   const width = canvas.clientWidth || 800;
   const height = canvas.clientHeight || 500;
-  const aspect = width / height;
+  const aspect = width > 0 && height > 0 ? width / height : 1.6;
   const camera = new THREE.OrthographicCamera(
     -ZOOM * aspect, ZOOM * aspect, ZOOM, -ZOOM, 0.1, 1000
   );
@@ -393,6 +401,8 @@ export function createScene(canvas) {
   function resize() {
     const w = canvas.clientWidth;
     const h = canvas.clientHeight;
+    // Bail on a zero-size canvas rather than computing a NaN aspect. The ResizeObserver
+    // fires again once layout gives the element real dimensions.
     if (!w || !h) return;
 
     const nextAspect = w / h;
