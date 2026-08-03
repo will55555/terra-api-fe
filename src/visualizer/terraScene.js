@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { ANCHOR, DOMAINS, LAYOUT_MODE, ringPositions, entitledServices } from './domainConfig';
+import { ANCHOR, DOMAINS, LAYOUT_MODE, DOMAIN_COLOR, SERVICE_COLOR, ringPositions, entitledServices } from './domainConfig';
 import { colorForStatus, shouldPulse, UNBUILT_COLOR } from './healthColors';
 
 // TFE-401 — Three.js scene for the customer-scoped topology, ported from
@@ -19,18 +19,23 @@ import { colorForStatus, shouldPulse, UNBUILT_COLOR } from './healthColors';
 //     HEALTH_ENDPOINTS map pointing at eight localhost ports that never existed. That map is
 //     deliberately NOT ported — this reads the single real endpoint via useEcosystemHealth.
 //
-// Kept faithful: orthographic isometric camera at (5,5,5), the sapphire MeshPhysicalMaterial,
-// starfield, exponential fog, and the cubeGroup that lets the whole lattice rotate as one.
+//  5. Presentation is tuned for a dashboard card rather than a full-viewport showpiece:
+//     starfield and fog removed, glass transmission swapped for a matte solid, lighting
+//     softened, camera zoomed in. Inside a card the original treatment read as a game engine.
+//
+// Kept faithful: the orthographic isometric camera at (5,5,5), phase5's exact CUBE_CONFIG
+// data (via domainConfig.js), its two-tone palette, the drag-to-rotate math, and the
+// cubeGroup that lets the whole lattice turn as one.
 
 const BG_COLOR = 0x04060f;
 // Light-mode backdrop, matching terra-hq-site's [data-theme="light"] --bg (#e5e1dc).
 const LIGHT_BG_COLOR = 0xe5e1dc;
 const ISO_CAMERA_POS = [5, 5, 5];
-// Frames roughly a 5-unit-wide view. phase5 used 6 (a 12-unit frame) because it renders a
-// 2x2x2 lattice spanning ~2.6 units across a FULL VIEWPORT. The customer ring is smaller
-// (radius 1.45) inside a dashboard card, so the same zoom left the cubes tiny and adrift in
-// empty space — read as "far apart" when the real problem was too much frame around them.
-const ZOOM = 2.6;
+// Frames roughly a 4.4-unit view. phase5 uses 6 (a 12-unit frame) because it renders
+// full-viewport; inside a dashboard card that left the ~2.6-unit lattice tiny and adrift in
+// empty space, which read as "cubes too far apart" when the real problem was too much frame
+// around them.
+const ZOOM = 2.2;
 
 // Starfield REMOVED 2026-08-02. It was carried over from phase5, where it belongs — that is
 // a full-viewport marketing showpiece and the stars read as atmosphere. Inside a dashboard
@@ -115,7 +120,7 @@ export function createScene(canvas) {
 
   // Anchor at the centre. Terra API is infrastructure every domain consumes, so it is not a
   // corner — it is what the corners orbit.
-  const anchorMesh = createCubeMesh({ scale: ANCHOR.scale, color: 0x003d7a });
+  const anchorMesh = createCubeMesh({ scale: ANCHOR.scale, color: DOMAIN_COLOR });
   anchorMesh.position.set(...ANCHOR.position);
   anchorMesh.userData.label = `${ANCHOR.name} — ${ANCHOR.desc}`;
   cubeGroup.add(anchorMesh);
@@ -147,7 +152,7 @@ export function createScene(canvas) {
    */
   function buildLattice() {
     for (const domain of DOMAINS) {
-      const shell = createCubeMesh({ scale: 1, color: UNBUILT_COLOR });
+      const shell = createCubeMesh({ scale: 1, color: DOMAIN_COLOR });
       shell.position.set(...domain.position);
       shell.userData.label = `${domain.name} — ${domain.desc}`;
       cubeGroup.add(shell);
@@ -157,7 +162,7 @@ export function createScene(canvas) {
       if (domain.service) {
         // Nested inside its domain shell — the visual statement that a service belongs to a
         // domain rather than sitting beside it.
-        const serviceMesh = createCubeMesh({ scale: 0.5, color: UNBUILT_COLOR });
+        const serviceMesh = createCubeMesh({ scale: 0.5, color: SERVICE_COLOR });
         serviceMesh.position.set(...domain.position);
         serviceMesh.userData.label = `${domain.service.name} (${domain.name})`;
         cubeGroup.add(serviceMesh);
