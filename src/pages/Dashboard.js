@@ -6,6 +6,7 @@ import EcosystemVisualizer from '../visualizer/EcosystemVisualizer';
 import useEcosystemHealth from '../visualizer/useEcosystemHealth';
 import ProductLaunchpad from './ProductLaunchpad';
 import NkapCard from './NkapCard';
+import TierCorners from './TierCorners';
 import './dashboard.css';
 
 // The Command Matrix — terra-api-adr-009 Phase 4, Concept AB layout (accepted 2026-08-01,
@@ -20,6 +21,23 @@ import './dashboard.css';
 // The health poll lives HERE, not inside the visualizer, because two regions consume it —
 // the topology and the launchpad's live service state. One poll, one source of truth, so a
 // product card and its cube can never disagree about whether something is running.
+// The endpoint returns operator vocabulary (healthy|degraded|critical) because the same tier
+// logic serves /actuator/ecosystem-health. A customer should read about THEIR products, not
+// about "the ecosystem" — and "CRITICAL" is alarming language for someone who cannot act on
+// it. Translated at the edge rather than in the API, so the operator view keeps its precision.
+function customerStatusLabel(status) {
+  switch (status) {
+    case 'healthy':
+      return 'ALL SYSTEMS NORMAL';
+    case 'degraded':
+      return 'SOME SERVICES DEGRADED';
+    case 'critical':
+      return 'SERVICE DISRUPTION';
+    default:
+      return '';
+  }
+}
+
 export default function Dashboard() {
   const { logout } = useAuth();
   const { theme, toggleTheme } = useTheme();
@@ -43,7 +61,7 @@ export default function Dashboard() {
       <header className="cm-header">
         <div className="cm-brand">
           <span className="cm-logo-title">Terra</span>
-          <span className="cm-nav-badge">COMMAND MATRIX // V1.0</span>
+          <span className="cm-nav-badge">MEMBER DASHBOARD</span>
           {/* Membership standing, Robinhood-Gold style: persistent, accent-filled, and the
               thing that makes the page-wide accent legible as a TIER rather than as an
               arbitrary brand colour. */}
@@ -73,13 +91,14 @@ export default function Dashboard() {
         {/* Top row: 60/40 split — topology left, Nkap right. */}
         <section className="cm-top-row">
           <div className="cm-card">
+            <TierCorners />
             <div className="cm-card-header">
-              <span className="cm-card-title">// ECOSYSTEM TOPOLOGY (SCOPED)</span>
+              <span className="cm-card-title">// YOUR ECOSYSTEM</span>
               <span className="cm-card-status">
                 {isInitialLoad && 'SYNCING…'}
-                {!isInitialLoad && error && 'FEED UNAVAILABLE'}
+                {!isInitialLoad && error && 'STATUS UNAVAILABLE'}
                 {!isInitialLoad && !error && customerStatus &&
-                  `ECOSYSTEM: ${customerStatus.toUpperCase()}`}
+                  customerStatusLabel(customerStatus)}
               </span>
             </div>
             <EcosystemVisualizer statusByServiceId={statusByServiceId} error={error} />
@@ -89,18 +108,19 @@ export default function Dashboard() {
         </section>
 
         <section className="cm-card">
+          <TierCorners />
           <div className="cm-card-header">
-            <span className="cm-card-title">// PRODUCT LAUNCHPAD</span>
+            <span className="cm-card-title">// YOUR PRODUCTS</span>
           </div>
           <ProductLaunchpad statusByServiceId={statusByServiceId} />
         </section>
 
         <section className="cm-card cm-placeholder">
           <div className="cm-card-header">
-            <span className="cm-card-title">// CROSS-PRODUCT ACTIVITY</span>
+            <span className="cm-card-title">// RECENT ACTIVITY</span>
           </div>
           <p className="cm-placeholder-note">
-            Not wired — ADR-007 audit log has no read endpoint yet
+            Activity history coming soon
           </p>
         </section>
       </main>

@@ -92,3 +92,35 @@ export function applyTierVars(tier) {
   root.style.setProperty('--accent-glow', tier.accentGlow);
   root.dataset.tier = tier.id;
 }
+
+// ─── Planned: tier-promotion animation ──────────────────────────────────────────
+//
+// When a customer moves up a tier (Silver -> Gold and so on), the change should be a
+// MOMENT, not a silent repaint — the whole surface shifting colour is the reward for
+// reaching it. Not built; recorded here so the seam is designed rather than retrofitted.
+//
+// The seam that makes it possible already exists: every accent is a CSS custom property on
+// :root, so a promotion is one variable write and a transition can interpolate it. What is
+// missing:
+//
+//  1. A backend field to change. resolveCustomerTier returns a constant today, so nothing
+//     can detect a transition — there is no previous value to compare against.
+//  2. Previous-tier memory. The animation needs from/to, which means persisting the last
+//     seen tier (localStorage, or a `tier_changed_at` from the API) so a promotion fires
+//     once rather than on every mount.
+//  3. The transition itself. CSS custom properties do not animate by default — they need
+//     @property registration with syntax: '<color>' to interpolate rather than snap.
+//
+// Deliberately not stubbed: an animation with no real trigger would be scaffolding that
+// looks finished, and getting the from/to semantics right needs the actual field to exist.
+// Revisit when Nkap ships a tier.
+export function detectTierPromotion(previousTierId, nextTierId) {
+  if (!previousTierId || previousTierId === nextTierId) return null;
+
+  const from = TIER_ORDER.indexOf(previousTierId);
+  const to = TIER_ORDER.indexOf(nextTierId);
+  if (from === -1 || to === -1) return null;
+
+  // Direction matters: a promotion is celebrated, a downgrade should be quiet.
+  return to > from ? { from: previousTierId, to: nextTierId, direction: 'up' } : null;
+}

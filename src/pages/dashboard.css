@@ -526,3 +526,73 @@
 .cm-nkap-tier-name { font-size: 10px; opacity: 0.55; }
 .cm-nkap-tier.is-current .cm-nkap-tier-name { opacity: 1; color: var(--text); font-weight: 500; }
 .cm-nkap-tier.is-current .cm-nkap-tier-dot { box-shadow: 0 0 0 3px var(--accent-glow, rgba(201,168,76,0.12)); }
+
+/* ─── Tier corner ornaments ──────────────────────────────────────────
+   Faceted metallic corner brackets in the customer's tier colour. Two references merged:
+   the low-poly triangular gradient field (angular, no curves) and the ornamental gold corner
+   bracket (L-shaped, corner-anchored) — geometry from the first, placement from the second.
+
+   Built from CSS gradients rather than SVG so the colour follows --accent automatically. An
+   SVG would need its fill rewritten per tier; a gradient just inherits, which is what makes
+   Silver/Gold/Platinum/Diamond/Sapphire free.
+
+   The "metallic" read comes from a multi-stop gradient at an angle — flat colour looks
+   painted, whereas light and dark stops across a diagonal suggest a bevelled surface
+   catching light. */
+
+.cm-card {
+  /* The ornaments are absolutely positioned against the card. */
+  position: relative;
+  isolation: isolate;
+}
+
+.cm-card > .cm-corner {
+  position: absolute;
+  width: 34px;
+  height: 34px;
+  pointer-events: none;
+  z-index: 1;
+  opacity: 0.85;
+}
+
+/* Each corner is two facets: a solid triangle and a lighter one offset behind it, which is
+   what reads as a bevel rather than a flat wedge. clip-path keeps every edge straight —
+   curves would break the low-poly language of the reference. */
+.cm-corner::before,
+.cm-corner::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+}
+
+.cm-corner::before {
+  background: linear-gradient(135deg,
+    var(--accent, var(--gold)) 0%,
+    color-mix(in srgb, var(--accent, var(--gold)) 55%, #000) 48%,
+    var(--accent, var(--gold)) 100%);
+  clip-path: polygon(0 0, 100% 0, 0 100%);
+  opacity: 0.9;
+}
+
+/* The second facet is smaller and offset, creating the two-tone break that makes the corner
+   look folded rather than printed. */
+.cm-corner::after {
+  background: linear-gradient(135deg,
+    color-mix(in srgb, var(--accent, var(--gold)) 75%, #fff) 0%,
+    var(--accent, var(--gold)) 100%);
+  clip-path: polygon(0 0, 58% 0, 0 58%);
+  opacity: 0.55;
+}
+
+.cm-corner-tl { top: 0; left: 0; }
+.cm-corner-tr { top: 0; right: 0; transform: scaleX(-1); }
+.cm-corner-bl { bottom: 0; left: 0; transform: scaleY(-1); }
+.cm-corner-br { bottom: 0; right: 0; transform: scale(-1, -1); }
+
+/* Placeholder cards stay unornamented — the corners signal "this is live", the same way the
+   accent seam does. */
+.cm-card.cm-placeholder > .cm-corner { display: none; }
+
+/* The top seam and the corners together were too much gold at once. With ornaments present
+   the seam recedes to a hairline. */
+.cm-card:has(> .cm-corner)::before { opacity: 0.18; }

@@ -73,10 +73,10 @@ export default function EcosystemVisualizer({ statusByServiceId = {}, error = nu
       {isEmpty && (
         <div className="cm-viz-empty">
           <span className="cm-viz-empty-title">
-            {error ? 'Topology unavailable' : 'No services yet'}
+            {error ? 'Status unavailable' : 'No services yet'}
           </span>
           <span className="cm-viz-empty-note">
-            {error ? 'Health feed unreachable — retrying' : 'Nothing provisioned to this account'}
+            {error ? 'Reconnecting' : 'No products on your account yet'}
           </span>
         </div>
       )}

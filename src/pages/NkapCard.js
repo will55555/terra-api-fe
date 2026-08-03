@@ -1,4 +1,5 @@
 import React from 'react';
+import TierCorners from './TierCorners';
 
 // Nkap treasury card — Concept AB's top-right, 40% of the split.
 //
@@ -23,13 +24,14 @@ export const NKAP_TIERS = [
 export default function NkapCard({ currentTierId = null }) {
   return (
     <div className="cm-card cm-nkap-card">
+      <TierCorners />
       <div className="cm-card-header">
-        <span className="cm-card-title">// NKAP TREASURY</span>
+        <span className="cm-card-title">// YOUR NKAP</span>
       </div>
 
       <div className="cm-nkap-balance-region">
         <div className="cm-nkap-balance-placeholder">◈ ——————</div>
-        <div className="cm-nkap-sub">BALANCE NOT WIRED — NO NKAP BACKEND YET</div>
+        <div className="cm-nkap-sub">NKAP LAUNCHING SOON</div>
       </div>
 
       {/* The tier ladder is real and worth showing even without a balance: it communicates

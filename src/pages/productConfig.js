@@ -35,7 +35,7 @@ export const PRODUCTS = [
     desc: 'Personal Investment & Portfolio Allocation System',
     status: PRODUCT_STATUS.IN_DESIGN,
     serviceId: 'pios',
-    note: 'Design phase — ADR-013 event schema versioning is the gating decision',
+    note: 'In development',
     action: { label: 'NOT AVAILABLE', enabled: false },
   },
   {

@@ -53,7 +53,7 @@ export default function ProductLaunchpad({ statusByServiceId = {} }) {
                   nothing. */}
               {live && (
                 <div className="cm-product-live">
-                  <div className="cm-product-live-label">SERVICE STATE</div>
+                  <div className="cm-product-live-label">STATUS</div>
                   <div className="cm-product-live-value">{live}</div>
                 </div>
               )}

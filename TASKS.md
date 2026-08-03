@@ -50,6 +50,13 @@ Don't build a Sign Up page until that backend work exists to register against.
       Phase 4 needs it yet).
 
 ## Phase 4 - Visualizer Integration (this repo, depends on Phase 3)
+> **Naming note:** two unrelated "phase" numbers collide here and it has caused real
+> confusion. This is **ADR-009 Build Sequence Phase 4** (auth shell → deploy wiring →
+> backend health → visualizer), and the branch is `phase-4-visualizer`. It ports
+> **`terra_api_visualizer_phase5.js`**, which is hq-site's own version number for that FILE
+> — phases 1-4 of it sit in `terra-hq-site/archive/` and are superseded. Both numbers are
+> correct; they count different things. phase5 is the best/current visualizer and is what
+> ADR-009 calls the shared Three.js reference implementation.
 - [ ] TFE-401 - Repurpose `terra-hq-site/terra_api_visualizer_phase5.js`'s Three.js logic into
       this repo.
 - [ ] TFE-402 - Cube filtering per customer, consuming Phase 3's entitlement-filtered endpoint.

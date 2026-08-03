@@ -119,7 +119,9 @@ export function findDomainByServiceId(serviceId) {
 // ecosystem", ring answers "what do I have". Same scene code renders both.
 export const LAYOUT_MODE = 'ring';
 
-const RING_RADIUS = 1.9;
+// Tight enough that the ring reads as one grouped object rather than scattered cubes. At
+// 1.9 the services drifted far from the anchor and the relationship stopped being legible.
+const RING_RADIUS = 1.45;
 
 /**
  * Evenly space N cubes on a circle around the anchor.
@@ -134,11 +136,15 @@ const RING_RADIUS = 1.9;
 export function ringPositions(count) {
   if (count === 0) return [];
 
+  // Flat on the XZ plane. An earlier version also varied Y by sin(angle), which — since Z
+  // used the same sin — collapsed the ring into a diagonal LINE rather than a circle. The
+  // isometric camera already supplies the sense of depth; tilting the ring as well just
+  // destroyed its shape.
   return Array.from({ length: count }, (_, i) => {
     const angle = (i / count) * Math.PI * 2;
     return [
       Math.cos(angle) * RING_RADIUS,
-      Math.sin(angle) * RING_RADIUS * 0.35,
+      0,
       Math.sin(angle) * RING_RADIUS,
     ];
   });
