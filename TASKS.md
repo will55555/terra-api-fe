@@ -66,19 +66,25 @@ Don't build a Sign Up page until that backend work exists to register against.
   endpoint exists.
 
 ## Phase 5 - Production Reachability & Hardening (not an ADR-009 build-sequence phase; ops/quality gaps found post-launch)
-- [ ] TFE-501 - Fix: SPA static assets return 401 for unauthenticated visitors, so nobody can
+- [x] TFE-501 - Fix: SPA static assets return 401 for unauthenticated visitors, so nobody can
       actually reach the dashboard despite a working deploy. **Root cause confirmed 2026-08-03**:
       the Jenkins `master` pipeline (build #6, `81d4d7e`) ran "Copy Frontend Build" → "Deploy to
       Prod" successfully — the deploy mechanism (TFE-201) works, on staging AND prod. The actual
-      bug is `terra-api/SecurityPaths.PERMIT_ALL_PATTERNS` never included the SPA's own routes
-      (`/`, `/static/**`, `/index.html`) — only `/actuator/**`, `/api/auth/login`,
-      `/api/v1/ecosystem/public-health`, `/error` are permitted, so Spring Security 401s the
-      shell itself before a browser ever gets the JS to run the client-side login redirect
-      (TFE-102). Superseded HUB_STATE's prior "the deploy has never run" framing — that was
-      wrong; the deploy runs fine, reachability is a security-config gap. Fix lives in
-      `terra-api`, tracked here since it's this repo's reachability blocker. Check while fixing:
-      whether client-side routes beyond `/` (React Router paths) need a static-resource fallback
-      to `index.html` too, a separate but adjacent SPA-on-Spring-Boot gotcha.
+      bug was `terra-api/SecurityPaths.PERMIT_ALL_PATTERNS` never including the SPA's own routes
+      — only `/actuator/**`, `/api/auth/login`, `/api/v1/ecosystem/public-health`, `/error` were
+      permitted, so Spring Security 401s the shell itself before a browser ever gets the JS to
+      run the client-side login redirect (TFE-102). Superseded HUB_STATE's prior "the deploy has
+      never run" framing — that was wrong; the deploy runs fine, reachability was a
+      security-config gap. **Real fix shipped**: an enumerated-static-asset-list approach was
+      drafted first and discarded — it could never cover an arbitrary client-side React Router
+      path (e.g. a bookmarked `/dashboard`), since Ant patterns can't express "permit everything
+      except X." Replaced with a full posture flip in `SecurityPaths`/`SecurityConfig`: `/api/**`
+      requires auth by default (verified 2026-08-03 that every `@RestController` in the codebase
+      lives under `/api/**` — nothing else exposes data), everything else is public by design,
+      covering any client-side route including deep-links with zero maintenance. **Live-verified
+      2026-08-03** after redeploy: `GET /` → `200` (was `401`); `GET
+      /api/v1/ecosystem/public-health` still `200` (unaffected); `GET /api/v1/flags` without a
+      token still `401` (still correctly guarded).
 - [ ] TFE-502 - Fix: a 401 leaves the user on a broken page instead of redirecting to login (hit
       twice 2026-08-02).
 - [ ] TFE-503 - Test coverage: 10 of 12 modules have none (only `healthColors`/`domainConfig`
