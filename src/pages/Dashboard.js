@@ -1,5 +1,7 @@
 import React, { useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { isOperator } from '../services/authService';
+import { Link } from 'react-router-dom';
 import { resolveCustomerTier, applyTierVars } from '../config/tierTheme';
 import { useTheme } from '../context/ThemeContext';
 import EcosystemVisualizer from '../visualizer/EcosystemVisualizer';
@@ -81,6 +83,12 @@ export default function Dashboard() {
           >
             {theme === 'dark' ? '☀' : '☾'} THEME
           </button>
+          {/* Only rendered for operators — a customer has no reason to see a link to a page
+              they would be redirected away from. Not a security measure: the route exists in
+              the bundle regardless, and the server is what refuses the data. */}
+          {isOperator() && (
+            <Link to="/internal" className="cm-theme-toggle">OPERATOR</Link>
+          )}
           <button type="button" className="cm-signout" onClick={logout}>
             SIGN OUT
           </button>

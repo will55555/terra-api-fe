@@ -1,0 +1,141 @@
+/* Operator surface — terra-api-adr-012. Layers onto dashboard.css rather than replacing it:
+   same design system, deliberately distinct chrome. Someone with both dashboards open should
+   never have to look twice to know which one they are acting in. */
+
+/* Blue-tinted top edge marks the whole page as operator context. Subtle enough not to shout,
+   present enough to register peripherally. */
+.op-shell {
+  border-top: 2px solid var(--accent, #60a5fa);
+}
+
+.op-badge {
+  color: var(--accent, #60a5fa);
+  border-color: var(--accent-dim, rgba(96, 165, 250, 0.3));
+  background: var(--accent-glow, rgba(96, 165, 250, 0.1));
+}
+
+/* ─── Service detail table ───────────────────────────────────────── */
+
+/* Horizontal scroll rather than wrapping: the affected-customers column grows unboundedly,
+   and wrapping it would reflow every other column into unreadability. */
+.op-table-wrap {
+  overflow-x: auto;
+}
+
+.op-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--font-mono);
+  font-size: 11px;
+}
+
+.op-table th {
+  text-align: left;
+  font-size: 9px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  font-weight: 500;
+  padding: 0 14px 10px 0;
+  border-bottom: 1px solid var(--border-sub);
+  white-space: nowrap;
+}
+
+.op-table td {
+  padding: 11px 14px 11px 0;
+  border-bottom: 1px solid var(--border-sub);
+  color: var(--text);
+  vertical-align: top;
+}
+
+/* Left border carries tier at a glance, so scanning the table does not require reading every
+   badge. Colours match the visualizer's TIER_COLORS exactly — a service that is orange in the
+   lattice must be orange in the table, or the two views appear to disagree. */
+.op-row { border-left: 2px solid transparent; }
+.op-row.op-tier-healthy  { border-left-color: transparent; }
+.op-row.op-tier-yellow   { border-left-color: #fbbf24; }
+.op-row.op-tier-orange   { border-left-color: #fb923c; }
+.op-row.op-tier-red      { border-left-color: #f87171; }
+
+.op-row td:first-child { padding-left: 12px; }
+
+.op-service-id {
+  font-weight: 500;
+  letter-spacing: 0.04em;
+}
+
+.op-tier-badge {
+  font-size: 8px;
+  padding: 3px 7px;
+  border-radius: 2px;
+  letter-spacing: 0.12em;
+  white-space: nowrap;
+}
+
+.op-tier-badge.op-tier-healthy {
+  color: var(--teal);
+  background: rgba(45, 212, 191, 0.1);
+  border: 1px solid rgba(45, 212, 191, 0.3);
+}
+
+.op-tier-badge.op-tier-yellow {
+  color: #fbbf24;
+  background: rgba(251, 191, 36, 0.1);
+  border: 1px solid rgba(251, 191, 36, 0.3);
+}
+
+.op-tier-badge.op-tier-orange {
+  color: #fb923c;
+  background: rgba(251, 146, 60, 0.1);
+  border: 1px solid rgba(251, 146, 60, 0.3);
+}
+
+.op-tier-badge.op-tier-red {
+  color: #f87171;
+  background: rgba(248, 113, 113, 0.12);
+  border: 1px solid rgba(248, 113, 113, 0.35);
+}
+
+/* Reasons are machine strings (missed_heartbeats, latency_p95_threshold) — dimmed so they read
+   as diagnostic detail rather than competing with the service name. */
+.op-reason {
+  color: var(--text-dim);
+  font-size: 10px;
+}
+
+.op-affected {
+  font-size: 10px;
+  color: var(--text-dim);
+  max-width: 320px;
+}
+
+.op-none {
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+/* ─── Access denied ──────────────────────────────────────────────── */
+
+.op-denied {
+  max-width: 520px;
+  margin: 15vh auto 0;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+}
+
+.op-denied-title {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.18em;
+  color: var(--accent, #60a5fa);
+}
+
+.op-denied-note {
+  font-size: 11px;
+  line-height: 1.7;
+  color: var(--text-dim);
+  margin: 0;
+}
