@@ -15,8 +15,18 @@
 export const TIER_COLORS = {
   HEALTHY: 0x00a8d8, // sapphire — the existing "connected" colour, unchanged
   YELLOW: 0xfbbf24,
-  ORANGE: 0xfb923c,
-  RED: 0xf87171,
+  // Shifted 0xfb923c -> 0xe8590c 2026-08-04, Will's explicit request: the original ORANGE was
+  // only ~20deg from YELLOW on the hue wheel and, at cube scale with the scene's lighting, the
+  // two were hard to tell apart (confirmed live via screenshot). Deliberately deepened toward
+  // true orange/burnt-orange rather than just brightened, to stay visually distinct from RED
+  // too. HEALTHY/YELLOW/RED intentionally left untouched — this is a scoped, requested
+  // exception to the tier-colors-frozen rule, not a general repaint.
+  ORANGE: 0xe8590c,
+  // Shifted 0xf87171 -> 0xdc2626 2026-08-04, same session, same reasoning: the original was a
+  // soft desaturated salmon that read as pink once the glass material's highlights/glow sat on
+  // top of it (confirmed live by Will). Deepened to an unambiguous, saturated alert red —
+  // distinct from ORANGE's burnt-orange and from anything that could be mistaken for pink.
+  RED: 0xdc2626,
 };
 
 // Not running: never reported, or reported and then went silent. Deliberately the same

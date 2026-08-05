@@ -18,6 +18,51 @@ import { authFetch } from '../services/authService';
 
 const POLL_INTERVAL_MS = 30000;
 
+// DEV-ONLY TEST TOOLING, added 2026-08-04 — kept intentionally, not scaffolding to delete
+// later. Nothing is deployed yet (no real ROMS/PIOS, nothing else has code at all), so this is
+// the only way to visually verify tier colours/pulse/layout before a real service ever reports
+// a heartbeat, and it stays useful for the same purpose after that (e.g. testing a tier this
+// build has never actually seen in production). Opt-in only via a URL query param — real fetch/
+// poll runs unmodified whenever neither flag is present, which is every normal page load:
+//   ?mockHealth=1    — two services (ROMS/PIOS), matching what production actually maps today
+//   ?mockHealthAll=1 — all 8 domains lit with varying status, for inspecting every cube/child
+//                      pair in one pass (pairs with terraScene.js's matching
+//                      SERVICE_ID_BY_CUBE_NAME override — production only maps ROMS/PIOS by
+//                      design, so testing the other 6 needs that override too)
+function getMockHealthOverride() {
+  if (typeof window === 'undefined') return null;
+  const params = new URLSearchParams(window.location.search);
+
+  if (params.get('mockHealthAll') === '1') {
+    // One of each: first domain OFF (never reported), remaining 7 cycled across the 4 real
+    // tiers so every domain/child pair shows a distinct, plausible status in one pass.
+    const tierCycle = ['HEALTHY', 'YELLOW', 'ORANGE', 'RED'];
+    const allServiceIds = ['nkap', 'roms', 'real-estate-child', 'agriculture-child',
+      'apparel-child', 'pios', 'africa-child', 'solar-child'];
+    const [offId, ...onIds] = allServiceIds;
+    return {
+      services: [
+        { service_id: offId, running: false },
+        ...onIds.map((id, i) => ({
+          service_id: id,
+          running: true,
+          tier: tierCycle[i % tierCycle.length],
+        })),
+      ],
+      customer_status: 'degraded',
+    };
+  }
+
+  if (params.get('mockHealth') !== '1') return null;
+  return {
+    services: [
+      { service_id: 'roms', running: true, tier: 'HEALTHY' },
+      { service_id: 'pios', running: true, tier: 'YELLOW' },
+    ],
+    customer_status: 'degraded',
+  };
+}
+
 export default function useEcosystemHealth({ pollIntervalMs = POLL_INTERVAL_MS } = {}) {
   const [statusByServiceId, setStatusByServiceId] = useState({});
   const [customerStatus, setCustomerStatus] = useState(null);
@@ -32,13 +77,16 @@ export default function useEcosystemHealth({ pollIntervalMs = POLL_INTERVAL_MS }
 
   const fetchHealth = useCallback(async () => {
     try {
-      const response = await authFetch('/api/v1/ecosystem/health');
+      // See getMockHealthOverride's comment above — dev-only, opt-in, temporary.
+      const mock = getMockHealthOverride();
+      const data = mock ?? await (async () => {
+        const response = await authFetch('/api/v1/ecosystem/health');
+        if (!response.ok) {
+          throw new Error(`ecosystem health returned ${response.status}`);
+        }
+        return response.json();
+      })();
 
-      if (!response.ok) {
-        throw new Error(`ecosystem health returned ${response.status}`);
-      }
-
-      const data = await response.json();
       if (!isMountedRef.current) return;
 
       // Keyed by service_id so the renderer can look up a cube's status directly rather than

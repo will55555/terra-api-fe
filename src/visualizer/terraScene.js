@@ -1,85 +1,127 @@
 import * as THREE from 'three';
-import { ANCHOR, DOMAINS, LAYOUT_MODE, DOMAIN_COLOR, SERVICE_COLOR, ringPositions, entitledServices } from './domainConfig';
-import { colorForStatus, shouldPulse, UNBUILT_COLOR } from './healthColors';
+import { ANCHOR, DOMAINS, DOMAIN_COLOR, SERVICE_COLOR } from './domainConfig';
+import { colorForStatus, shouldPulse, OFF_COLOR, UNBUILT_COLOR } from './healthColors';
 
-// TFE-401 — Three.js scene for the customer-scoped topology, ported from
-// terra-hq-site/terra_api_visualizer_phase5.js (repo ROOT, not archive/ — those are
-// superseded).
+// TFE-401 — full copy-paste port of terra-hq-site/terra_api_visualizer_phase5.js (repo ROOT,
+// not archive/) into React, per Will's explicit call: this must be the SAME visualizer, not a
+// reduced dashboard-card variant. Every phase5 behavior below is preserved — starfield, fog,
+// glass materials, click-to-expand/release/collapse, pipeline tubes with shader pulse, mouse
+// repulsion field, touch support.
 //
-// WHAT CHANGED FROM PHASE5, and why:
-//
-//  1. No module-level mutable state. phase5 keeps `scene`, `camera`, `renderer`, `clock` as
-//     file globals, which is fine for one page-load-one-instance but leaks a second renderer
-//     and a second RAF loop under React StrictMode's double-invoked effects. Everything here
-//     lives in the closure returned by createScene() and is torn down by dispose().
-//  2. No document.getElementById. phase5 reaches for 'canvas', 'hoverLabel', 'theme-icon';
-//     this takes the canvas element as an argument so React owns it via a ref.
+// What actually had to change, and only this:
+//  1. No module-level mutable state. phase5 keeps `scene`/`camera`/`renderer`/`clock` etc as
+//     file globals — fine for one page-load-one-instance, but leaks a second renderer and RAF
+//     loop under React StrictMode's double-invoked effects. Everything here lives in the
+//     closure returned by createScene() and is torn down by dispose().
+//  2. No document.getElementById/querySelector for #canvas/#hoverLabel/.theme-toggle. This
+//     takes the canvas as an argument (React owns it via a ref) and the hover label element is
+//     supplied via setHoverLabelElement, matching EcosystemVisualizer's existing contract.
 //  3. `three` is an npm import, not a global from a <script> tag.
-//  4. Health drives colour. phase5 had a binary connected/disconnected model plus a
-//     HEALTH_ENDPOINTS map pointing at eight localhost ports that never existed. That map is
-//     deliberately NOT ported — this reads the single real endpoint via useEcosystemHealth.
+//  4. Health comes in through applyHealth(statusByServiceId), fed by the existing
+//     useEcosystemHealth hook — not polled internally. Dashboard owns the single poll (see
+//     EcosystemVisualizer's header) because the product launchpad consumes the same data.
+//  5. Listeners bind to the canvas element instead of window, since this is one component in a
+//     page rather than the whole document.
+//  6. Theme is driven by setTheme(theme) from React's ThemeContext instead of an internal
+//     localStorage toggle + theme-icon button — the surrounding dashboard already owns theme.
 //
-//  5. Presentation is tuned for a dashboard card rather than a full-viewport showpiece:
-//     starfield and fog removed, glass transmission swapped for a matte solid, lighting
-//     softened, camera zoomed in. Inside a card the original treatment read as a game engine.
-//
-// Kept faithful: the orthographic isometric camera at (5,5,5), phase5's exact CUBE_CONFIG
-// data (via domainConfig.js), its two-tone palette, the drag-to-rotate math, and the
-// cubeGroup that lets the whole lattice turn as one.
+// Everything else — CUBE_CONFIG's shape (via domainConfig.js, itself a verbatim mirror),
+// materials, camera, lighting, the pipeline shader, the expand/release/collapse state machine,
+// the repulsion field — is unchanged from phase5.
 
-// No BG_COLOR constants: the scene background is transparent in both themes (see
-// createScene), so the card CSS owns the ground and the canvas lets it through.
+const ZOOM = 6;
 const ISO_CAMERA_POS = [5, 5, 5];
-// Frame half-height. The lattice spans ±0.65 in centres plus a half-cube on each side, and
-// the isometric projection puts two corners on a diagonal (× ~1.41). At the cube scale below
-// that is roughly ±1.35, so 3.2 leaves the diagram sitting comfortably inside the card with
-// real margin rather than pressed against the edges.
-const ZOOM = 3.2;
 
-// Domain cubes are drawn smaller than phase5's 1.0. At full size, cubes 1.0 wide with
-// centres 1.3 apart leave only 0.3 of gap, so adjacent cubes nearly touch and the lattice
-// reads as one solid mass rather than eight distinct domains. 0.62 roughly doubles the
-// visible separation while keeping the same corner positions, which is what makes the
-// structure legible at card size. phase5 does not need this because a full viewport gives
-// the eye enough room to separate them.
-const DOMAIN_CUBE_SCALE = 0.62;
-const SERVICE_CUBE_SCALE = 0.3;
+// Build the same CUBE_CONFIG shape phase5 uses, from domainConfig.js's shared data — keeps one
+// source of truth (ADR-009) instead of re-declaring positions/colours here.
+function buildCubeConfig() {
+  const config = [
+    {
+      name: ANCHOR.name,
+      desc: ANCHOR.desc,
+      position: ANCHOR.position,
+      scale: ANCHOR.scale,
+      color: DOMAIN_COLOR,
+      connected: true,
+      isAnchor: true,
+    },
+  ];
 
-// Starfield REMOVED 2026-08-02. It was carried over from phase5, where it belongs — that is
-// a full-viewport marketing showpiece and the stars read as atmosphere. Inside a dashboard
-// card the same effect reads as a game engine rather than a data display: Robinhood and
-// Apple render diagrams on flat, quiet grounds and let the DATA carry the visual interest.
-// A faint radial gradient (in visualizer.css) gives depth without the decoration.
+  for (const domain of DOMAINS) {
+    config.push({
+      name: domain.name,
+      desc: domain.desc,
+      position: domain.position,
+      scale: 1,
+      color: DOMAIN_COLOR,
+      connected: true,
+      hasChildren: true,
+      children: domain.service ? [domain.service.name] : [],
+    });
 
-function createCubeMesh({ scale = 1, color }) {
-  const geometry = new THREE.BoxGeometry(1, 1, 1);
+    if (domain.service) {
+      config.push({
+        name: domain.service.name,
+        desc: domain.service.desc,
+        position: domain.position,
+        scale: 0.5,
+        color: SERVICE_COLOR,
+        connected: true,
+        parent: domain.name,
+        hidden: true,
+        serviceId: domain.service.serviceId,
+      });
+    }
+  }
 
-  // Matte, not glass. phase5 used transmission: 0.5 with roughness 0 for a sapphire
-  // refraction effect — beautiful full-screen, but inside a dashboard card it reads as a
-  // shiny toy. Raising roughness and dropping transmission gives a soft matte solid closer
-  // to how Apple renders product diagrams: the FORM carries the meaning, not the shine.
-  const material = new THREE.MeshStandardMaterial({
-    color,
+  return config;
+}
+
+// serviceId lookup by cube name, derived the same way phase5's SERVICE_ID_BY_CUBE_NAME was —
+// only cubes with a real serviceId (ROMS, PIOS today) get health-driven colour.
+function buildServiceIdByCubeName() {
+  const map = {};
+  for (const domain of DOMAINS) {
+    if (domain.service?.serviceId) {
+      map[domain.service.name] = domain.service.serviceId;
+    }
+  }
+  return map;
+}
+
+function fract(x) {
+  return x - Math.floor(x);
+}
+
+function smoothstep(edge1, edge0, x) {
+  const t = Math.max(0, Math.min(1, (x - edge0) / (edge1 - edge0)));
+  return t * t * (3 - 2 * t);
+}
+
+function createStarfield() {
+  // 120, not phase5's 800, and dimmer/smaller — per Will's 2026-08-04 direction ("looks too
+  // much like a game"). At 800 dense bright points, a small dashboard card reads as a sci-fi
+  // skybox; this keeps a faint sense of depth without competing with the cubes for attention.
+  const starCount = 120;
+  const starGeometry = new THREE.BufferGeometry();
+  const positions = new Float32Array(starCount * 3);
+
+  for (let i = 0; i < starCount * 3; i += 3) {
+    positions[i] = (Math.random() - 0.5) * 200;
+    positions[i + 1] = (Math.random() - 0.5) * 200;
+    positions[i + 2] = (Math.random() - 0.5) * 200;
+  }
+
+  starGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+  const starMaterial = new THREE.PointsMaterial({
+    color: 0x8890a0,
+    size: 0.15,
+    sizeAttenuation: true,
     transparent: true,
-    opacity: 0.92,
-    roughness: 0.65,
-    metalness: 0.05,
+    opacity: 0.5,
   });
 
-  const mesh = new THREE.Mesh(geometry, material);
-  mesh.scale.setScalar(scale);
-  // Remembered so the pulse animation can return to the right size — lattice and ring use
-  // different base scales.
-  mesh.userData.baseScale = scale;
-
-  // Wireframe edges read the lattice structure far better than the translucent faces alone.
-  const edges = new THREE.LineSegments(
-    new THREE.EdgesGeometry(geometry),
-    new THREE.LineBasicMaterial({ color, transparent: true, opacity: 0.55 })
-  );
-  mesh.add(edges);
-
-  return mesh;
+  return new THREE.Points(starGeometry, starMaterial);
 }
 
 /**
@@ -87,27 +129,36 @@ function createCubeMesh({ scale = 1, color }) {
  * inside it.
  *
  * @param {HTMLCanvasElement} canvas
- * @returns {{applyHealth: Function, resize: Function, dispose: Function}}
+ * @returns {{applyHealth: Function, resize: Function, dispose: Function, setHoverLabelElement: Function, setTheme: Function}}
  */
 export function createScene(canvas) {
+  const CUBE_CONFIG = buildCubeConfig();
+  // DEV-ONLY TEST TOOLING, added 2026-08-04 — pairs with useEcosystemHealth.js's mock, kept
+  // intentionally. Production only maps ROMS/PIOS (the only domains with a real serviceId), so
+  // ?mockHealthAll=1 would have nothing to color for the other 6 domains without this override.
+  // Mirrors those same service.id values so every domain/child pair becomes eligible for the
+  // mock's synthetic statuses. Only ever active when the query param is present; every normal
+  // page load falls through to the real buildServiceIdByCubeName() below.
+  const isMockAllTest = typeof window !== 'undefined'
+    && new URLSearchParams(window.location.search).get('mockHealthAll') === '1';
+  const SERVICE_ID_BY_CUBE_NAME = isMockAllTest
+    ? Object.fromEntries(DOMAINS.filter((d) => d.service).map((d) => [d.service.name, d.service.id]))
+    : buildServiceIdByCubeName();
+
   const scene = new THREE.Scene();
-  // Transparent rather than a painted background: the card's CSS gradient shows through, so
-  // the diagram sits ON the surface instead of in its own little window. Fog is gone with the
-  // starfield — at this scale it only muddied the cubes.
-  scene.background = null;
+  // Nudged one step lighter than phase5's original 0x04060f per Will's 2026-08-04 request
+  // ("tiny bit lighter") — cube/tube colours themselves are untouched, this is background only.
+  scene.background = new THREE.Color(0x0a0e1a);
+  scene.fog = new THREE.FogExp2(0x0a0e1a, 0.03);
+  scene.add(createStarfield());
 
   const cubeGroup = new THREE.Group();
   scene.add(cubeGroup);
 
-  // Orthographic, not perspective: the isometric look needs parallel lines rather than a
-  // vanishing point. Camera at (5,5,5) looking at origin is the classic 35.26° iso angle.
-  // Fall back to a sane 16:10 rather than trusting clientWidth at construction time. If the
-  // canvas has not been laid out yet both are 0, and 0/0 is NaN — which silently produces an
-  // invalid camera frustum rather than throwing. The ResizeObserver in EcosystemVisualizer
-  // corrects these values the moment real layout lands.
   const width = canvas.clientWidth || 800;
   const height = canvas.clientHeight || 500;
   const aspect = width > 0 && height > 0 ? width / height : 1.6;
+
   const camera = new THREE.OrthographicCamera(
     -ZOOM * aspect, ZOOM * aspect, ZOOM, -ZOOM, 0.1, 1000
   );
@@ -117,129 +168,466 @@ export function createScene(canvas) {
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
   renderer.setSize(width, height, false);
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.outputColorSpace = THREE.SRGBColorSpace;
 
-  // Softer, more directional lighting than phase5's. Its 1.0 ambient + 1.0 directional +
-  // cyan point light made every face bright and glassy — the "toy" quality. Lowering ambient
-  // and dropping the coloured rim gives cubes readable shading and a matte, product-diagram
-  // finish instead of a plastic one.
-  scene.add(new THREE.AmbientLight(0xffffff, 0.55));
-  const directional = new THREE.DirectionalLight(0xffffff, 0.9);
-  directional.position.set(4, 8, 6);
+  // Reverted to phase5's original intensities 2026-08-04 — Will confirmed the gem/glass look
+  // (bright lights make the transmission/refraction actually read) is intentional, Infinity
+  // Stone-style, not something to dim.
+  scene.add(new THREE.AmbientLight(0xffffff, 1.0));
+  const directional = new THREE.DirectionalLight(0xffffff, 1.0);
+  directional.position.set(5, 5, 5);
+  directional.castShadow = true;
   scene.add(directional);
-  const fill = new THREE.DirectionalLight(0xffffff, 0.25);
-  fill.position.set(-6, -3, -4);
-  scene.add(fill);
+  const accent = new THREE.PointLight(0x00d9ff, 0.5);
+  accent.position.set(-5, 3, 3);
+  scene.add(accent);
 
-  // Anchor at the centre. Terra API is infrastructure every domain consumes, so it is not a
-  // corner — it is what the corners orbit.
-  const anchorMesh = createCubeMesh({ scale: DOMAIN_CUBE_SCALE * 0.8, color: DOMAIN_COLOR });
-  anchorMesh.position.set(...ANCHOR.position);
-  anchorMesh.userData.label = `${ANCHOR.name} — ${ANCHOR.desc}`;
-  cubeGroup.add(anchorMesh);
+  const raycaster = new THREE.Raycaster();
+  const pointer = new THREE.Vector2();
 
-  const serviceMeshes = new Map(); // serviceId -> mesh
-  // Flat list for raycasting. Only Meshes go in — the edge LineSegments are children and
-  // would otherwise steal hits from the cube they outline.
-  const pickables = [anchorMesh];
-  // Everything except the anchor, so a rebuild can clear the ring without disturbing it.
-  let builtMeshes = [];
+  let cubes = [];
+  let cubesByName = {};
+  let pipelineLayer = null;
+  let pipelineEdges = [];
+  const dynamicPipelineExtensions = {};
+  const parentChildStates = {};
+  let hoveredMesh = null;
+  let hoverLabelEl = null;
+  let lastClickTime = 0;
+  const CLICK_COOLDOWN = 300;
 
-  /** Remove and release every non-anchor cube. */
-  function clearBuilt() {
-    for (const mesh of builtMeshes) {
-      cubeGroup.remove(mesh);
-      mesh.traverse((child) => {
-        if (child.geometry) child.geometry.dispose();
-        if (child.material) child.material.dispose();
+  const globalPipelineUniforms = { time: { value: 0.0 } };
+
+  function createSapphireCube(config) {
+    const geometry = new THREE.BoxGeometry(1, 1, 1);
+
+    let material;
+    if (config.connected) {
+      // Reverted 2026-08-04: an earlier pass in this same session flattened these toward matte
+      // (roughness up, transmission/ior down) chasing a "less like a game" note. Will then
+      // clarified explicitly: the gem/glass look is INTENTIONAL and should stay — Infinity
+      // Stone-style (the blue Space Stone), not a flaw to fix. Restored to the original phase5
+      // glass values. The "looks like a game" complaint is about OTHER elements (dashboard
+      // corner ornaments, starfield density — see those fixes), not this material.
+      if (config.isAnchor) {
+        material = new THREE.MeshPhysicalMaterial({
+          color: 0xffffff,
+          emissive: 0xffffff,
+          emissiveIntensity: 2.0,
+          transparent: true,
+          opacity: 1.0,
+          roughness: 0.0,
+          metalness: 0.0,
+          transmission: 0.7,
+          thickness: 2.5,
+          envMapIntensity: 3.0,
+          ior: 2.4,
+        });
+      } else {
+        material = new THREE.MeshPhysicalMaterial({
+          color: 0x1a3a6b,
+          emissive: 0x1a6aff,
+          emissiveIntensity: 0.8,
+          transparent: true,
+          opacity: 0.9,
+          roughness: 0.0,
+          metalness: 0.2,
+          transmission: 0.5,
+          thickness: 1.5,
+          envMapIntensity: 2.0,
+          ior: 2.4,
+        });
+      }
+    } else {
+      const opacity = 0.45;
+      let baseColor = 0x5588aa;
+      if (config.isAnchor) {
+        baseColor = 0xaa8899;
+      }
+      material = new THREE.MeshStandardMaterial({
+        color: baseColor,
+        metalness: 0.5,
+        roughness: 0.15,
+        transparent: true,
+        opacity,
+        emissive: 0x000000,
+        emissiveIntensity: 0,
       });
     }
-    builtMeshes = [];
-    serviceMeshes.clear();
-    pickables.length = 1; // keep the anchor
+
+    const mesh = new THREE.Mesh(geometry, material);
+    mesh.position.set(...config.position);
+    mesh.scale.set(config.scale, config.scale, config.scale);
+
+    if (config.connected && !config.isAnchor) {
+      const edges = new THREE.EdgesGeometry(geometry);
+      const edgeMaterial = new THREE.LineBasicMaterial({
+        color: 0x88ddff,
+        linewidth: 2,
+        transparent: true,
+        opacity: 0.9,
+      });
+      mesh.add(new THREE.LineSegments(edges, edgeMaterial));
+    }
+
+    if (config.isAnchor && config.connected) {
+      const sphereGeometry = new THREE.SphereGeometry(config.scale * 0.6, 32, 32);
+      const sphereMaterial = new THREE.MeshBasicMaterial({
+        color: 0xffffff,
+        transparent: true,
+        opacity: 0,
+        fog: false,
+      });
+      const glowSphere = new THREE.Mesh(sphereGeometry, sphereMaterial);
+      glowSphere.userData.isTerraPulse = true;
+      mesh.add(glowSphere);
+    }
+
+    mesh.userData.config = config;
+    mesh.userData.baseMaterial = material.clone();
+    mesh.userData.originalPosition = new THREE.Vector3(...config.position);
+
+    if (config.hidden) {
+      mesh.visible = false;
+    }
+
+    cubeGroup.add(mesh);
+    cubes.push(mesh);
+    cubesByName[config.name] = mesh;
+
+    return mesh;
   }
 
-  /**
-   * LATTICE — the full public topology: 8 domain shells at the corners of a 2x2x2, each with
-   * its service nested inside at half scale. Built once; nothing here depends on entitlement.
-   */
-  function buildLattice() {
+  function createPipelineLayer() {
+    const pipelineGroup = new THREE.Group();
+    const tubeRadius = 0.04;
+    const tubeSegments = 10;
+
+    const terraCube = cubes.find((c) => c.userData.config.isAnchor);
+    const pathOrder = [
+      'Finance', 'Hospitality', 'Solar', 'Agriculture',
+      'Real Estate', 'Apparel', 'Ventures', 'Africa',
+    ];
+
+    const edges = [];
+    if (terraCube) {
+      pathOrder.forEach((name) => {
+        const cube = cubes.find((c) => c.userData.config.name === name);
+        if (cube) edges.push({ cube1: terraCube, cube2: cube });
+      });
+    }
+    pipelineEdges = edges;
+
+    edges.forEach(({ cube1, cube2 }) => {
+      const curve = new THREE.LineCurve3(cube1.position, cube2.position);
+      const tubeGeometry = new THREE.TubeGeometry(curve, tubeSegments, tubeRadius, 8, false);
+
+      const tubeMaterial = new THREE.ShaderMaterial({
+        uniforms: {
+          ...globalPipelineUniforms,
+          connected1: { value: cube1.userData.config.connected ? 1.0 : 0.0 },
+          connected2: { value: cube2.userData.config.connected ? 1.0 : 0.0 },
+        },
+        vertexShader: `
+          varying vec2 vUv;
+          void main() {
+            vUv = uv;
+            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+          }
+        `,
+        fragmentShader: `
+          uniform float time;
+          uniform float connected1;
+          uniform float connected2;
+          varying vec2 vUv;
+          void main() {
+            float isConnected = min(connected1, connected2);
+            if (isConnected > 0.5) {
+              float pulse = fract(vUv.x - time * 0.4);
+              float brightness = smoothstep(0.6, 0.0, abs(pulse - 0.5));
+              vec3 goldPipe = vec3(0.78, 0.53, 0.06);
+              vec3 white = vec3(1.0, 1.0, 1.0);
+              vec3 color = mix(goldPipe, white, brightness);
+              float alpha = 0.4 + brightness * 0.6;
+              gl_FragColor = vec4(color, alpha);
+            } else {
+              vec3 brightRed = vec3(1.0, 0.2, 0.2);
+              gl_FragColor = vec4(brightRed, 0.4);
+            }
+          }
+        `,
+        transparent: true,
+      });
+
+      const tube = new THREE.Mesh(tubeGeometry, tubeMaterial);
+      tube.userData.cube1 = cube1;
+      tube.userData.cube2 = cube2;
+      pipelineGroup.add(tube);
+    });
+
+    cubeGroup.add(pipelineGroup);
+    return pipelineGroup;
+  }
+
+  function createPipelineExtension(cubeName, cube) {
+    const tubeRadius = 0.04;
+    const tubeSegments = 10;
+    const connectionPoint = cube.userData.originalPosition;
+
+    const curve = new THREE.LineCurve3(
+      new THREE.Vector3(connectionPoint.x, connectionPoint.y, connectionPoint.z),
+      cube.position
+    );
+    const tubeGeometry = new THREE.TubeGeometry(curve, tubeSegments, tubeRadius, 8, false);
+
+    const tubeMaterial = new THREE.ShaderMaterial({
+      uniforms: {
+        ...globalPipelineUniforms,
+        connected1: { value: cube.userData.config.connected ? 1.0 : 0.0 },
+        connected2: { value: cube.userData.config.connected ? 1.0 : 0.0 },
+        offsetFactor: { value: Math.random() },
+      },
+      vertexShader: `
+        varying vec3 vPosition;
+        void main() {
+          vPosition = position;
+          gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+        }
+      `,
+      fragmentShader: `
+        varying vec3 vPosition;
+        uniform float time;
+        uniform float connected1;
+        uniform float connected2;
+        uniform float offsetFactor;
+        void main() {
+          float isConnected = min(connected1, connected2);
+          float positionNorm = fract(vPosition.y * 2.0 + time * 1.5 + offsetFactor);
+          if (isConnected > 0.5) {
+            float pulse = fract(positionNorm - time * 0.4);
+            float brightness = smoothstep(0.6, 0.0, abs(pulse - 0.5));
+            vec3 goldPipe = vec3(0.78, 0.53, 0.06);
+            vec3 white = vec3(1.0, 1.0, 1.0);
+            vec3 color = mix(goldPipe, white, brightness);
+            float alpha = 0.4 + brightness * 0.6;
+            gl_FragColor = vec4(color, alpha);
+          } else {
+            vec3 brightRed = vec3(1.0, 0.2, 0.2);
+            gl_FragColor = vec4(brightRed, 0.4);
+          }
+        }
+      `,
+      transparent: true,
+    });
+
+    const tube = new THREE.Mesh(tubeGeometry, tubeMaterial);
+    // cube1/cube2 (both = cube), matching the main radial tubes' naming so the live-refresh
+    // loop below recognizes this tube on every tick instead of freezing its connected state at
+    // creation time — this is THQ-003's fix, carried into the React port from the start.
+    tube.userData.cube1 = cube;
+    tube.userData.cube2 = cube;
+    tube.userData.isExtension = true;
+    pipelineLayer.add(tube);
+
+    let childTube = null;
+    const config = cube.userData.config;
+    if (config.hasChildren && config.children.length > 0) {
+      const childMesh = cubesByName[config.children[0]];
+      if (childMesh) {
+        const childCurve = new THREE.LineCurve3(cube.position, childMesh.position);
+        const childTubeGeometry = new THREE.TubeGeometry(childCurve, tubeSegments, tubeRadius, 8, false);
+        childTube = new THREE.Mesh(childTubeGeometry, tubeMaterial);
+        childTube.userData.cube1 = cube;
+        childTube.userData.cube2 = cube;
+        childTube.userData.isExtension = true;
+        pipelineLayer.add(childTube);
+      }
+    }
+
+    return { parentTube: tube, childTube };
+  }
+
+  function applyCubeColor(cubeName, colorHex) {
+    const mesh = cubesByName[cubeName];
+    if (!mesh) return;
+    mesh.userData.config.color = colorHex;
+    mesh.material.color.setHex(colorHex);
+    if (mesh.userData.baseMaterial) {
+      mesh.userData.baseMaterial.color.setHex(colorHex);
+    }
+  }
+
+  function updateCubeConnection(cubeName, isConnected) {
+    const mesh = cubesByName[cubeName];
+    if (!mesh) return;
+
+    mesh.userData.config.connected = isConnected;
+
+    // Floor raised from 0.7/no-glow to 0.55/dim-outline 2026-08-04: at the old values, a
+    // disconnected child (every domain except ROMS/PIOS today, since nothing else has a
+    // reporting service yet) rendered with no emissive glow AND no edge outline, which against
+    // the scene's dark background made it functionally invisible — confirmed live by Will as
+    // "some children aren't there" when several domains were expanded side by side. The cube is
+    // still clearly dimmer than a connected one (opacity, no strong emissive), but now has a
+    // faint edge outline so an unbuilt placeholder reads as "present, nothing here yet" rather
+    // than vanishing.
+    const opacity = isConnected ? 0.85 : 0.55;
+    const baseColor = mesh.userData.config.color;
+    const emissive = isConnected ? baseColor : 0x000000;
+    const emissiveIntensity = isConnected ? 0.8 : 0;
+
+    mesh.material.opacity = opacity;
+    mesh.material.emissive.setHex(emissive);
+    mesh.material.emissiveIntensity = emissiveIntensity;
+
+    // Anchor-only body-colour swap, added 2026-08-04: phase5's own createSapphireCube already
+    // specifies 0xaa8899 ("Terra: greyish pink when disconnected") for the anchor, but that
+    // branch only ran at MESH-CREATION time — since the anchor is always built with
+    // connected:true, the pink value was dead code, never actually applied. The anchor's
+    // "off" state instead just dimmed the same white glass material, which read as white/blue,
+    // not pink (confirmed live by Will). Fixed here where connection state actually changes at
+    // runtime, not just at creation.
+    if (mesh.userData.config.isAnchor) {
+      mesh.material.color.setHex(isConnected ? 0xffffff : 0xaa8899);
+      if (mesh.userData.baseMaterial) {
+        mesh.userData.baseMaterial.color.setHex(isConnected ? 0xffffff : 0xaa8899);
+      }
+    }
+
+    if (mesh.userData.baseMaterial) {
+      mesh.userData.baseMaterial.opacity = opacity;
+      mesh.userData.baseMaterial.emissive.setHex(emissive);
+      mesh.userData.baseMaterial.emissiveIntensity = emissiveIntensity;
+    }
+
+    const config = mesh.userData.config;
+    if (!mesh.userData.edgeLines) {
+      const geometry = mesh.geometry;
+      const edges = new THREE.EdgesGeometry(geometry);
+      const edgeColor = config.isAnchor ? 0xeeffff : 0x88ddff;
+      const edgeMaterial = new THREE.LineBasicMaterial({
+        color: edgeColor,
+        linewidth: 2,
+        transparent: true,
+        opacity: config.isAnchor ? 1.0 : 0.9,
+      });
+      const edgeLines = new THREE.LineSegments(edges, edgeMaterial);
+      mesh.add(edgeLines);
+      mesh.userData.edgeLines = edgeLines;
+    }
+    // Outline stays attached either way now; only its own opacity signals connected state.
+    mesh.userData.edgeLines.material.opacity = (config.isAnchor ? 1.0 : 0.9) * (isConnected ? 1.0 : 0.35);
+
+    if (config.children && config.children.length > 0 && !config.parent) {
+      config.children.forEach((childName) => updateCubeConnection(childName, isConnected));
+    }
+
+    if (pipelineLayer) {
+      pipelineLayer.children.forEach((tube) => {
+        if (tube.userData.cube1 && tube.userData.cube2) {
+          const c1 = tube.userData.cube1.userData.config.connected ? 1.0 : 0.0;
+          const c2 = tube.userData.cube2.userData.config.connected ? 1.0 : 0.0;
+          if (tube.material.uniforms) {
+            tube.material.uniforms.connected1.value = c1;
+            tube.material.uniforms.connected2.value = c2;
+          }
+        }
+      });
+    }
+  }
+
+  // ─── Health application (replaces phase5's fetch-based runHealthCheckTick) ─────────────
+  // React feeds statusByServiceId in via applyHealth(); this walks the same CUBE_CONFIG /
+  // SERVICE_ID_BY_CUBE_NAME logic phase5 used per-tick, just without the fetch itself.
+  //
+  // hasError, added 2026-08-04: `statusByServiceId != null` was ALWAYS true, because
+  // EcosystemVisualizer defaults the prop to `{}` (never null) and useEcosystemHealth's own
+  // state starts at `{}` and stays `{}` on a fetch failure (deliberately, so a transient blip
+  // doesn't blank the topology) — so the anchor's "unreachable" pink never actually applied,
+  // confirmed live by Will (anchor stayed white/blue with "STATUS UNAVAILABLE" showing). The
+  // real reachability signal is the hook's separate `error` value, passed through here.
+  function applyHealth(statusByServiceId, hasError = false) {
+    const terraApiReachable = !hasError;
+    updateCubeConnection(ANCHOR.name, terraApiReachable);
+
+    // Diagnostic log, added 2026-08-04 at Will's request — one line per health tick (not
+    // phase5's verbose per-cube logging, which would flood devtools). Shows exactly what
+    // reached the scene so a "why is X the wrong colour" question can be answered from the
+    // console instead of guessing. Safe to remove once the pipeline is fully trusted.
+    // eslint-disable-next-line no-console
+    console.log('[terra-visualizer] health tick', {
+      reachable: terraApiReachable,
+      services: statusByServiceId,
+    });
+
     for (const domain of DOMAINS) {
-      const shell = createCubeMesh({ scale: DOMAIN_CUBE_SCALE, color: DOMAIN_COLOR });
-      shell.position.set(...domain.position);
-      shell.userData.label = `${domain.name} — ${domain.desc}`;
-      cubeGroup.add(shell);
-      pickables.push(shell);
-      builtMeshes.push(shell);
+      // isMockAllTest also unlocks placeholder domains here — otherwise this gate would skip
+      // them before SERVICE_ID_BY_CUBE_NAME's override above ever gets consulted.
+      const reportingChild = (domain.service?.serviceId || (isMockAllTest && domain.service))
+        ? domain.service.name : null;
 
-      if (domain.service) {
-        // Nested inside its domain shell — the visual statement that a service belongs to a
-        // domain rather than sitting beside it.
-        const serviceMesh = createCubeMesh({ scale: SERVICE_CUBE_SCALE, color: SERVICE_COLOR });
-        serviceMesh.position.set(...domain.position);
-        serviceMesh.userData.label = `${domain.service.name} (${domain.name})`;
-        cubeGroup.add(serviceMesh);
-        pickables.push(serviceMesh);
-        builtMeshes.push(serviceMesh);
+      if (!reportingChild || !terraApiReachable) {
+        applyCubeColor(domain.name, UNBUILT_COLOR);
+        if (domain.service) applyCubeColor(domain.service.name, UNBUILT_COLOR);
+        updateCubeConnection(domain.name, false);
+        continue;
+      }
 
-        if (domain.service.serviceId) {
-          serviceMeshes.set(domain.service.serviceId, serviceMesh);
+      const serviceId = SERVICE_ID_BY_CUBE_NAME[reportingChild];
+      const status = statusByServiceId[serviceId] ?? null;
+      const tierColor = colorForStatus(status);
+
+      applyCubeColor(reportingChild, tierColor);
+      updateCubeConnection(domain.name, Boolean(status && status.running));
+
+      const mesh = cubesByName[reportingChild];
+      if (mesh) mesh.userData.shouldPulse = shouldPulse(status);
+    }
+  }
+
+  function applyRepulsionField() {
+    const cubeSize = 1.0;
+    const repulsionStrength = 0.15;
+
+    for (let i = 0; i < cubes.length; i++) {
+      for (let j = i + 1; j < cubes.length; j++) {
+        const cubeA = cubes[i];
+        const cubeB = cubes[j];
+        if (!cubeA.visible || !cubeB.visible) continue;
+
+        const scaleA = cubeA.scale.x;
+        const scaleB = cubeB.scale.x;
+        const collisionDistance = ((cubeSize * scaleA) / 2 + (cubeSize * scaleB) / 2) + 0.05;
+
+        const delta = new THREE.Vector3().subVectors(cubeB.position, cubeA.position);
+        const distance = delta.length();
+
+        if (distance < collisionDistance && distance > 0.001) {
+          const direction = delta.normalize();
+          const overlap = collisionDistance - distance;
+          const pushForce = direction.multiplyScalar(overlap * repulsionStrength);
+          cubeA.position.sub(pushForce);
+          cubeB.position.add(pushForce);
         }
       }
     }
   }
 
-  /**
-   * RING — the customer view: one cube per ENTITLED SERVICE, evenly spaced around the anchor.
-   *
-   * Rebuilt whenever the entitled set changes, which is why it cannot be constructed up
-   * front like the lattice: entitlement arrives with the first health response. Rebuilds are
-   * cheap (a handful of cubes) and rare (only when the set itself changes, not on every
-   * poll — applyHealth guards that).
-   */
-  function buildRing(services) {
-    const positions = ringPositions(services.length);
-
-    services.forEach((service, i) => {
-      // Smaller than the anchor (0.8) so Terra API reads as the thing being orbited. At 0.7
-      // the two sizes were close enough that the hierarchy was ambiguous.
-      const mesh = createCubeMesh({ scale: 0.55, color: UNBUILT_COLOR });
-      mesh.position.set(...positions[i]);
-      // Domain shown as context, not as the subject: the customer owns ROMS; Hospitality is
-      // where it sits.
-      mesh.userData.label = `${service.name} — ${service.domainName}`;
-      cubeGroup.add(mesh);
-      pickables.push(mesh);
-      builtMeshes.push(mesh);
-      serviceMeshes.set(service.serviceId, mesh);
-    });
-  }
-
-  if (LAYOUT_MODE === 'lattice') {
-    buildLattice();
-  }
-
-  // ─── Interaction ──────────────────────────────────────────────────────────────
-  // Ported from phase5's onMouseMoveRotation / onMouseDown / onMouseUpOrLeave, with the
-  // same rotationSpeed (0.01) and the same rotateOnWorldAxis approach — world axes rather
-  // than local, so dragging stays intuitive no matter how far the lattice has already
-  // turned. Listeners bind to the CANVAS, not window: phase5 could own the whole page, but
-  // this is one card in a dashboard and must not swallow drags meant for the page.
-
-  const raycaster = new THREE.Raycaster();
-  const pointer = new THREE.Vector2();
-
+  // ─── Interaction: hover, drag-rotate, click-to-expand/release/collapse ─────────────────
   let isDragging = false;
   let lastX = 0;
   let lastY = 0;
-  let autoRotate = true;
-  let hoveredMesh = null;
-  let hoverLabel = null;
-
   const ROTATION_SPEED = 0.01;
+  // Idle auto-spin, added 2026-08-04 — NOT present in phase5's own source (confirmed by
+  // reading it directly), but the visualizer's hint text ("DRAG TO ROTATE · DOUBLE-CLICK TO
+  // RESUME SPIN") always implied one, carried over from an earlier reduced version of this
+  // component that did have it. Will confirmed he wants the spin present, so this is a
+  // deliberate addition beyond a faithful phase5 port, not a restoration of something that was
+  // silently dropped.
+  let autoRotate = true;
+  const AUTO_ROTATE_SPEED = 0.12;
 
   function updatePointer(clientX, clientY) {
-    // Screen pixels -> Normalized Device Coordinates. NDC is (-1,-1) bottom-left to (1,1)
-    // top-right, and Y is flipped because screen Y grows downward.
     const rect = renderer.domElement.getBoundingClientRect();
     pointer.x = ((clientX - rect.left) / rect.width) * 2 - 1;
     pointer.y = -((clientY - rect.top) / rect.height) * 2 + 1;
@@ -248,18 +636,169 @@ export function createScene(canvas) {
   function pickAt(clientX, clientY) {
     updatePointer(clientX, clientY);
     raycaster.setFromCamera(pointer, camera);
-    const hits = raycaster.intersectObjects(pickables, false);
-    return hits.length > 0 ? hits[0].object : null;
+    const hits = raycaster.intersectObjects(cubes, false);
+    return hits.length > 0 ? hits.find((h) => h.object instanceof THREE.Mesh)?.object ?? null : null;
+  }
+
+  function onPointerMoveHover(clientX, clientY) {
+    const mesh = pickAt(clientX, clientY);
+
+    if (mesh !== hoveredMesh) {
+      if (hoveredMesh?.userData.baseMaterial) {
+        hoveredMesh.material.copy(hoveredMesh.userData.baseMaterial);
+      }
+      hoveredMesh = mesh;
+
+      if (mesh) {
+        mesh.material.emissiveIntensity = 0.7;
+        mesh.material.opacity = 1;
+      }
+
+      if (hoverLabelEl) {
+        hoverLabelEl.textContent = mesh?.userData.config
+          ? `${mesh.userData.config.name} — ${mesh.userData.config.desc}`
+          : '';
+        hoverLabelEl.style.opacity = mesh ? '1' : '0';
+      }
+      renderer.domElement.style.cursor = mesh ? 'pointer' : 'grab';
+    }
+
+    if (hoverLabelEl && mesh) {
+      const rect = renderer.domElement.getBoundingClientRect();
+      hoverLabelEl.style.left = `${clientX - rect.left + 12}px`;
+      hoverLabelEl.style.top = `${clientY - rect.top + 12}px`;
+    }
+  }
+
+  function handleClick(clientX, clientY) {
+    const now = Date.now();
+    if (now - lastClickTime < CLICK_COOLDOWN) return;
+    lastClickTime = now;
+
+    const clickedMesh = pickAt(clientX, clientY);
+    if (!clickedMesh?.userData.config) return;
+
+    const config = clickedMesh.userData.config;
+    const cubeName = config.name;
+
+    if (config.isAnchor) {
+      cubes.forEach((cube) => {
+        const cubeConfig = cube.userData.config;
+        if (cubeConfig.hasChildren) {
+          const originalPos = cube.userData.originalPosition;
+          cube.position.copy(originalPos);
+          cubeConfig.children.forEach((childName) => {
+            const childMesh = cubes.find((c) => c.userData.config.name === childName);
+            if (childMesh) {
+              childMesh.visible = false;
+              childMesh.position.copy(originalPos);
+            }
+          });
+          parentChildStates[cubeConfig.name] = { expanded: false, childReleased: false };
+        }
+      });
+      return;
+    }
+
+    if (!parentChildStates[cubeName]) {
+      parentChildStates[cubeName] = { expanded: false, childReleased: false };
+    }
+    const state = parentChildStates[cubeName];
+
+    if (config.parent && clickedMesh.visible) {
+      const parentName = config.parent;
+      const parentMesh = cubes.find((c) => c.userData.config.name === parentName);
+      if (parentMesh) {
+        clickedMesh.visible = false;
+        clickedMesh.position.copy(parentMesh.position);
+        parentMesh.position.copy(parentMesh.userData.originalPosition);
+        if (parentChildStates[parentName]) {
+          parentChildStates[parentName].expanded = false;
+          parentChildStates[parentName].childReleased = false;
+        }
+      }
+      return;
+    }
+
+    if (!state.expanded) {
+      const originalPos = clickedMesh.userData.originalPosition;
+      const expandDir = {
+        x: originalPos.x !== 0 ? (originalPos.x > 0 ? 1 : -1) : 0,
+        y: originalPos.y !== 0 ? (originalPos.y > 0 ? 1 : -1) : 0,
+        z: originalPos.z !== 0 ? (originalPos.z > 0 ? 1 : -1) : 0,
+      };
+      // 0.8, not phase5's 2.0 — that value was tuned for a full-viewport scene; inside this
+      // bounded dashboard card at ZOOM=6 it sent cubes flying off-frame with long stretched
+      // tubes (confirmed live 2026-08-04, Will's screenshot). 0.8 keeps the expand motion
+      // visible without leaving the card.
+      const expandDistance = 0.8;
+      clickedMesh.position.x += expandDir.x * expandDistance;
+      clickedMesh.position.y += expandDir.y * expandDistance;
+      clickedMesh.position.z += expandDir.z * expandDistance;
+
+      if (config.hasChildren) {
+        config.children.forEach((childName) => {
+          const childMesh = cubes.find((c) => c.userData.config.name === childName);
+          if (childMesh) {
+            childMesh.visible = true;
+            childMesh.position.copy(clickedMesh.position);
+          }
+        });
+      }
+
+      state.expanded = true;
+      state.childReleased = false;
+
+      if (!dynamicPipelineExtensions[cubeName]) {
+        dynamicPipelineExtensions[cubeName] = createPipelineExtension(cubeName, clickedMesh);
+      }
+    } else if (state.expanded && !state.childReleased) {
+      const raisedPosition = new THREE.Vector3().copy(clickedMesh.position);
+      clickedMesh.position.copy(clickedMesh.userData.originalPosition);
+
+      if (config.hasChildren && !config.parent) {
+        const scatterDistance = 0.8; // matches expandDistance's card-scale correction above
+        const originalPos = clickedMesh.userData.originalPosition;
+        const dir = {
+          x: originalPos.x !== 0 ? (originalPos.x > 0 ? 1 : -1) : 0,
+          y: originalPos.y !== 0 ? (originalPos.y > 0 ? 1 : -1) : 0,
+          z: originalPos.z !== 0 ? (originalPos.z > 0 ? 1 : -1) : 0,
+        };
+        config.children.forEach((childName) => {
+          const childMesh = cubes.find((c) => c.userData.config.name === childName);
+          if (childMesh) {
+            childMesh.position.set(
+              raisedPosition.x + dir.x * scatterDistance,
+              raisedPosition.y + dir.y * scatterDistance,
+              raisedPosition.z + dir.z * scatterDistance
+            );
+          }
+        });
+      }
+
+      state.childReleased = true;
+    } else if (state.expanded && state.childReleased) {
+      if (config.hasChildren) {
+        config.children.forEach((childName) => {
+          const childMesh = cubes.find((c) => c.userData.config.name === childName);
+          if (childMesh) childMesh.position.copy(clickedMesh.position);
+        });
+      }
+      state.expanded = false;
+      state.childReleased = false;
+    }
   }
 
   function onPointerDown(event) {
     isDragging = true;
+    autoRotate = false;
     lastX = event.clientX;
     lastY = event.clientY;
-    // Stop the idle spin while the user is in control — fighting a drag against an
-    // auto-rotation feels broken.
-    autoRotate = false;
     renderer.domElement.setPointerCapture?.(event.pointerId);
+  }
+
+  function onDoubleClick() {
+    autoRotate = true;
   }
 
   function onPointerMove(event) {
@@ -272,22 +811,7 @@ export function createScene(canvas) {
       cubeGroup.rotateOnWorldAxis(new THREE.Vector3(1, 0, 0), deltaY * ROTATION_SPEED);
       return;
     }
-
-    const mesh = pickAt(event.clientX, event.clientY);
-    if (mesh !== hoveredMesh) {
-      hoveredMesh = mesh;
-      renderer.domElement.style.cursor = mesh ? 'pointer' : 'grab';
-      if (hoverLabel) {
-        hoverLabel.textContent = mesh?.userData.label ?? '';
-        hoverLabel.style.opacity = mesh ? '1' : '0';
-      }
-    }
-
-    if (hoverLabel && mesh) {
-      const rect = renderer.domElement.getBoundingClientRect();
-      hoverLabel.style.left = `${event.clientX - rect.left + 12}px`;
-      hoverLabel.style.top = `${event.clientY - rect.top + 12}px`;
-    }
+    onPointerMoveHover(event.clientX, event.clientY);
   }
 
   function onPointerUp(event) {
@@ -299,109 +823,136 @@ export function createScene(canvas) {
   function onPointerLeave() {
     isDragging = false;
     hoveredMesh = null;
-    if (hoverLabel) hoverLabel.style.opacity = '0';
+    if (hoverLabelEl) hoverLabelEl.style.opacity = '0';
   }
 
-  // Double-click resumes the idle spin — otherwise the first drag stops it permanently and
-  // there is no way back without a reload.
-  function onDoubleClick() {
-    autoRotate = true;
+  function onClick(event) {
+    if (!isDragging) handleClick(event.clientX, event.clientY);
   }
 
   const canvasEl = renderer.domElement;
   canvasEl.style.cursor = 'grab';
+  canvasEl.style.touchAction = 'none';
   canvasEl.addEventListener('pointerdown', onPointerDown);
   canvasEl.addEventListener('pointermove', onPointerMove);
   canvasEl.addEventListener('pointerup', onPointerUp);
   canvasEl.addEventListener('pointerleave', onPointerLeave);
+  canvasEl.addEventListener('click', onClick);
   canvasEl.addEventListener('dblclick', onDoubleClick);
-  // touch-action: none is what makes pointer events fire for touch drags instead of the
-  // browser scrolling the page underneath.
-  canvasEl.style.touchAction = 'none';
 
+  // ─── Build ────────────────────────────────────────────────────────────────────────────
+  CUBE_CONFIG.forEach((config) => createSapphireCube(config));
+  pipelineLayer = createPipelineLayer();
+
+  // ─── Animation loop ───────────────────────────────────────────────────────────────────
   let rafId = null;
   const clock = new THREE.Clock();
-  // serviceId -> whether it should pulse, refreshed by applyHealth.
-  let pulsing = new Map();
-  let lastElapsed = 0;
 
   function animate() {
     rafId = requestAnimationFrame(animate);
-    const elapsed = clock.getElapsedTime();
+    const delta = clock.getDelta();
+    const time = Date.now() * 0.001;
 
-    // Advance by DELTA rather than setting rotation.y absolutely: an absolute assignment
-    // would discard whatever the user dragged the moment auto-rotation resumed.
+    // phase5's per-frame sine drift on domain-shell cubes (`cube.position.x = originalPos.x +
+    // Math.sin(...)`) is deliberately NOT ported: the main radial pipeline tubes below are
+    // built once from a static LineCurve3 between cube centres and never redrawn per frame, so
+    // a continuously drifting cube position visually detaches from its tube except at the
+    // instant sin() crosses zero — confirmed live 2026-08-04 (Will's screenshot showed the gap).
+    // The drift would also fight click-to-expand/release, which sets cube.position directly.
+    // Dropping it fixes both and reads as a steadier, more deliberate diagram — closer to
+    // Will's "professional, not a game" direction than a constantly wobbling lattice.
+
     if (autoRotate) {
-      cubeGroup.rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), (elapsed - lastElapsed) * 0.08);
+      cubeGroup.rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), delta * AUTO_ROTATE_SPEED);
     }
-    lastElapsed = elapsed;
 
-    // Pulse only degraded-but-running services. A healthy service is unremarkable; an off
-    // one is not urgent. Drawing the eye to everything draws it to nothing.
-    for (const [serviceId, mesh] of serviceMeshes) {
-      // Read the base off the mesh rather than hardcoding it — lattice service cubes are 0.5
-      // (nested inside a domain shell) and ring cubes are 0.7 (standalone), so a literal here
-      // would silently resize one of the two modes.
-      const scaleBase = mesh.userData.baseScale ?? 0.5;
-      if (pulsing.get(serviceId)) {
-        mesh.scale.setScalar(scaleBase + Math.sin(elapsed * 3) * 0.04);
-      } else if (mesh.scale.x !== scaleBase) {
-        mesh.scale.setScalar(scaleBase);
+    Object.keys(dynamicPipelineExtensions).forEach((cubeName) => {
+      const cube = cubesByName[cubeName];
+      const tubes = dynamicPipelineExtensions[cubeName];
+      if (!cube || !tubes || !cube.userData.config) return;
+
+      const state = parentChildStates[cubeName];
+      if (!state || !state.expanded) {
+        if (tubes.parentTube) {
+          pipelineLayer.remove(tubes.parentTube);
+          tubes.parentTube.geometry.dispose();
+          tubes.parentTube.material.dispose();
+        }
+        if (tubes.childTube) {
+          pipelineLayer.remove(tubes.childTube);
+          tubes.childTube.geometry.dispose();
+          tubes.childTube.material.dispose();
+        }
+        delete dynamicPipelineExtensions[cubeName];
+        return;
       }
-    }
+
+      const parentConnected = cube.userData.config.connected ? 1.0 : 0.0;
+      if (tubes.parentTube?.material?.uniforms) {
+        tubes.parentTube.material.uniforms.connected1.value = parentConnected;
+        tubes.parentTube.material.uniforms.connected2.value = parentConnected;
+      }
+      if (tubes.childTube?.material?.uniforms) {
+        tubes.childTube.material.uniforms.connected1.value = parentConnected;
+        const childMesh = cubesByName[cube.userData.config.children?.[0]];
+        tubes.childTube.material.uniforms.connected2.value = childMesh?.userData.config.connected ? 1.0 : 0.0;
+      }
+
+      if (!cube.userData.lastTubeUpdatePos) {
+        cube.userData.lastTubeUpdatePos = new THREE.Vector3();
+      }
+      const posChanged = cube.userData.lastTubeUpdatePos.distanceTo(cube.position) > 0.01;
+
+      if (posChanged && tubes.parentTube) {
+        tubes.parentTube.geometry.dispose();
+        const originalPos = cube.userData.originalPosition;
+        const parentCurve = new THREE.LineCurve3(
+          new THREE.Vector3(originalPos.x, originalPos.y, originalPos.z),
+          cube.position
+        );
+        tubes.parentTube.geometry = new THREE.TubeGeometry(parentCurve, 10, 0.04, 8, false);
+      }
+
+      if (posChanged && tubes.childTube && cube.userData.config.children?.length > 0) {
+        const childMesh = cubesByName[cube.userData.config.children[0]];
+        if (childMesh?.visible) {
+          tubes.childTube.geometry.dispose();
+          const childCurve = new THREE.LineCurve3(cube.position, childMesh.position);
+          tubes.childTube.geometry = new THREE.TubeGeometry(childCurve, 10, 0.04, 8, false);
+        }
+      }
+
+      if (posChanged) cube.userData.lastTubeUpdatePos.copy(cube.position);
+    });
+
+    applyRepulsionField();
+    globalPipelineUniforms.time.value += delta * 1.2;
+
+    cubes.forEach((cube) => {
+      if (cube.userData.config.isAnchor) {
+        cube.children.forEach((child) => {
+          if (child.userData.isTerraPulse) {
+            const pulseValue = fract(globalPipelineUniforms.time.value * 0.4);
+            const brightness = smoothstep(0.6, 0.0, Math.abs(pulseValue - 0.5));
+            child.material.opacity = brightness * 0.8;
+          }
+        });
+      }
+      // Health-driven pulse (ADR-009 pulse-if-degraded), distinct from Terra's own glow above.
+      if (cube.userData.shouldPulse) {
+        const base = cube.userData.baseScale ?? cube.userData.config.scale;
+        cube.scale.setScalar(base + Math.sin(time * 3) * 0.04);
+      }
+    });
 
     renderer.render(scene, camera);
   }
   animate();
 
-  /**
-   * Recolour service cubes from the health endpoint's response.
-   * @param {Record<string, {running: boolean, tier?: string}>} statusByServiceId
-   */
-  // Tracks which services the ring was last built for, so a rebuild happens only when the
-  // SET changes — not on every 30s poll, which would recreate WebGL geometry needlessly and
-  // reset the user's drag rotation mid-look.
-  let builtSignature = null;
-
-  function applyHealth(statusByServiceId) {
-    if (LAYOUT_MODE === 'ring') {
-      const services = entitledServices(statusByServiceId);
-      const signature = services.map((s) => s.serviceId).sort().join(',');
-
-      if (signature !== builtSignature) {
-        clearBuilt();
-        buildRing(services);
-        builtSignature = signature;
-      }
-    }
-
-    const nextPulsing = new Map();
-
-    for (const [serviceId, mesh] of serviceMeshes) {
-      const status = statusByServiceId[serviceId] ?? null;
-      const color = colorForStatus(status);
-
-      mesh.material.color.setHex(color);
-      // The edge LineSegments is the mesh's only child; keeping it in sync is what makes the
-      // colour change read clearly at this scale.
-      const edges = mesh.children[0];
-      if (edges?.material) {
-        edges.material.color.setHex(color);
-      }
-
-      nextPulsing.set(serviceId, shouldPulse(status));
-    }
-
-    pulsing = nextPulsing;
-  }
-
   function resize() {
     const w = canvas.clientWidth;
     const h = canvas.clientHeight;
-    // Bail on a zero-size canvas rather than computing a NaN aspect. The ResizeObserver
-    // fires again once layout gives the element real dimensions.
     if (!w || !h) return;
-
     const nextAspect = w / h;
     camera.left = -ZOOM * nextAspect;
     camera.right = ZOOM * nextAspect;
@@ -411,26 +962,14 @@ export function createScene(canvas) {
     renderer.setSize(w, h, false);
   }
 
-  // Explicit teardown. Three.js holds GPU resources the garbage collector cannot reclaim, so
-  // dropping the reference is not enough — geometries, materials, and the WebGL context all
-  // have to be released or a remount leaks them.
-  /** Element the hover tooltip writes into. React owns it; the scene just positions it. */
   function setHoverLabelElement(element) {
-    hoverLabel = element;
+    hoverLabelEl = element;
   }
 
-  /**
-   * Repaint the scene background/fog for a theme.
-   * Only the backdrop changes — cube colours stay health-driven, since a YELLOW service is
-   * yellow in either theme and remapping it per-theme would break the one meaning the
-   * colours carry.
-   */
   function setTheme(theme) {
-    // Scene background stays transparent in both themes — the card's CSS owns the ground, so
-    // the theme flip happens there and the canvas simply lets it through. Kept as a no-op
-    // rather than deleted because the React side calls it on every theme change, and cube
-    // materials may need theme-aware treatment later.
-    void theme;
+    const bgColor = theme === 'light' ? 0xe5e1dc : 0x0a0e1a;
+    scene.background = new THREE.Color(bgColor);
+    if (scene.fog) scene.fog.color = new THREE.Color(bgColor);
   }
 
   function dispose() {
@@ -443,6 +982,7 @@ export function createScene(canvas) {
     canvasEl.removeEventListener('pointermove', onPointerMove);
     canvasEl.removeEventListener('pointerup', onPointerUp);
     canvasEl.removeEventListener('pointerleave', onPointerLeave);
+    canvasEl.removeEventListener('click', onClick);
     canvasEl.removeEventListener('dblclick', onDoubleClick);
 
     scene.traverse((object) => {
@@ -453,8 +993,9 @@ export function createScene(canvas) {
       }
     });
 
-    serviceMeshes.clear();
-    pickables.length = 0;
+    cubes = [];
+    cubesByName = {};
+    pipelineEdges = [];
     renderer.dispose();
   }
 

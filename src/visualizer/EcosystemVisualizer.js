@@ -57,8 +57,11 @@ export default function EcosystemVisualizer({ statusByServiceId = {}, error = nu
   }, []);
 
   useEffect(() => {
-    sceneRef.current?.applyHealth(statusByServiceId);
-  }, [statusByServiceId]);
+    // `error` passed through 2026-08-04 — see applyHealth's own comment in terraScene.js for
+    // why statusByServiceId alone can't signal unreachability (it's always {} on failure, not
+    // null), which was the actual cause of the anchor never turning "off"-pink on a real error.
+    sceneRef.current?.applyHealth(statusByServiceId, Boolean(error));
+  }, [statusByServiceId, error]);
 
   // WebGL cannot read CSS custom properties, so the scene's background is repainted
   // imperatively rather than inherited from the theme attribute.

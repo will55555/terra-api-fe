@@ -101,7 +101,7 @@ export default function Dashboard() {
           <div className="cm-card">
             <TierCorners />
             <div className="cm-card-header">
-              <span className="cm-card-title">{'// '}YOUR ECOSYSTEM</span>
+              <span className="cm-card-title"><span className="cm-card-index">01</span>{'// '}YOUR ECOSYSTEM</span>
               <span className="cm-card-status">
                 {isInitialLoad && 'SYNCING…'}
                 {!isInitialLoad && error && 'STATUS UNAVAILABLE'}
@@ -118,14 +118,14 @@ export default function Dashboard() {
         <section className="cm-card">
           <TierCorners />
           <div className="cm-card-header">
-            <span className="cm-card-title">{'// '}YOUR PRODUCTS</span>
+            <span className="cm-card-title"><span className="cm-card-index">02</span>{'// '}YOUR PRODUCTS</span>
           </div>
           <ProductLaunchpad statusByServiceId={statusByServiceId} />
         </section>
 
         <section className="cm-card cm-placeholder">
           <div className="cm-card-header">
-            <span className="cm-card-title">{'// '}RECENT ACTIVITY</span>
+            <span className="cm-card-title"><span className="cm-card-index">03</span>{'// '}RECENT ACTIVITY</span>
           </div>
           <p className="cm-placeholder-note">
             Activity history coming soon

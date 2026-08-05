@@ -48,21 +48,21 @@ export const DOMAINS = [
     name: 'Real Estate',
     desc: 'Property management',
     position: [-0.65, -0.65, 0.65],
-    service: { id: 'real-estate-child', name: 'Real Estate', serviceId: null, desc: 'Planned — no service yet' },
+    service: { id: 'real-estate-child', name: 'Real Estate (Planned)', serviceId: null, desc: 'Planned — no service yet' },
   },
   {
     id: 'agriculture',
     name: 'Agriculture',
     desc: 'Farm operations',
     position: [0.65, -0.65, 0.65],
-    service: { id: 'agriculture-child', name: 'Agriculture', serviceId: null, desc: 'Planned — no service yet' },
+    service: { id: 'agriculture-child', name: 'Agriculture (Planned)', serviceId: null, desc: 'Planned — no service yet' },
   },
   {
     id: 'apparel',
     name: 'Apparel',
     desc: 'Design & commerce',
     position: [-0.65, 0.65, -0.65],
-    service: { id: 'apparel-child', name: 'Apparel', serviceId: null, desc: 'Planned — no service yet' },
+    service: { id: 'apparel-child', name: 'Apparel (Planned)', serviceId: null, desc: 'Planned — no service yet' },
   },
   {
     id: 'ventures',
@@ -80,14 +80,14 @@ export const DOMAINS = [
     name: 'Africa',
     desc: 'Regional systems',
     position: [-0.65, -0.65, -0.65],
-    service: { id: 'africa-child', name: 'Africa', serviceId: null, desc: 'Planned — no service yet' },
+    service: { id: 'africa-child', name: 'Africa (Planned)', serviceId: null, desc: 'Planned — no service yet' },
   },
   {
     id: 'solar',
     name: 'Solar',
     desc: 'Concept — needs development',
     position: [0.65, -0.65, -0.65],
-    service: { id: 'solar-child', name: 'Solar', serviceId: null, desc: 'Concept — needs development' },
+    service: { id: 'solar-child', name: 'Solar (Planned)', serviceId: null, desc: 'Concept — needs development' },
   },
 ];
 

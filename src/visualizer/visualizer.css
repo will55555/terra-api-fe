@@ -5,8 +5,14 @@
 .cm-visualizer {
   position: relative;
   width: 100%;
-  aspect-ratio: 16 / 10;
-  min-height: 300px;
+  /* max-height added 2026-08-04: aspect-ratio alone scales unboundedly with card width, and
+     the /internal operator page hosts this in a FULL-width card (no 60/40 split like the
+     customer dashboard) — at 3/2 that produced an ~930px-tall card, mostly empty space around
+     a small cube cluster (confirmed live via Will's screenshot). Capping height keeps the
+     lattice a sane, content-sized panel regardless of which page/card width hosts it. */
+  aspect-ratio: 3 / 2;
+  min-height: 380px;
+  max-height: 460px;
   /* Barely-there radial lift, off-centre so it reads as light falling across a surface
      rather than a vignette. */
   background:

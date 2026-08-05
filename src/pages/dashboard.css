@@ -16,9 +16,12 @@
   --amber: #fbbf24;
   --purple: #a78bfa;
   --blue: #60a5fa;
+  /* --text-dim/--text-muted brightened 2026-08-04 for readability — Will reported the small
+     mono type was hard to read; low contrast compounded the size issue. Same hue family, just
+     lighter, so this is a legibility fix, not a palette change. */
   --text: #e8e4dc;
-  --text-dim: #7a7570;
-  --text-muted: #4a4744;
+  --text-dim: #a39d95;
+  --text-muted: #6b655f;
   --border: rgba(201, 168, 76, 0.18);
   --border-sub: rgba(255, 255, 255, 0.06);
   --font-serif: 'Cormorant Garamond', serif;
@@ -36,8 +39,10 @@
   --text: #1a1410;
   --text-dim: #5c5652;
   --text-muted: #8a837e;
-  /* Borders invert: a white-on-black hairline is invisible on a light ground. */
-  --border-sub: rgba(0, 0, 0, 0.08);
+  /* Borders invert: a white-on-black hairline is invisible on a light ground. Strengthened
+     0.08 -> 0.18 2026-08-04 — Will reported card edges were hard to see in light mode; 0.08 was
+     too faint against --surface's light tan to read as a real edge. */
+  --border-sub: rgba(0, 0, 0, 0.18);
   --gold-glow: rgba(201, 168, 76, 0.16);
 }
 
@@ -45,7 +50,9 @@
   background-color: var(--bg);
   color: var(--text);
   font-family: var(--font-mono);
-  font-size: 11px;
+  /* 11px -> 13px base 2026-08-04 — Will reported the type was too small to comfortably read.
+     Everything below that sets its own smaller/larger size off this base scales with it. */
+  font-size: 13px;
   line-height: 1.5;
   padding: 20px;
   min-height: 100vh;
@@ -86,7 +93,7 @@
 }
 
 .cm-nav-badge {
-  font-size: 9px;
+  font-size: 10px;
   letter-spacing: 0.14em;
   color: var(--text-dim);
   border: 1px solid var(--border-sub);
@@ -100,7 +107,7 @@
   border: 1px solid var(--border-sub);
   color: var(--text-dim);
   font-family: var(--font-mono);
-  font-size: 9px;
+  font-size: 10px;
   letter-spacing: 0.12em;
   padding: 4px 10px;
   border-radius: 2px;
@@ -120,8 +127,13 @@
 .cm-grid {
   display: flex;
   flex-direction: column;
-  gap: 28px;
-  max-width: 1400px;
+  /* Widened 28px -> 40px 2026-08-04: structural borrow from Montfort Group's site (generous
+     section gaps, content given room to breathe) per Will's request to mix Terra's existing
+     palette/type with that layout discipline. Palette/type themselves untouched. */
+  gap: 40px;
+  /* 1400px -> 1700px 2026-08-04 — Will wants cards to stretch closer to the viewport edges
+     rather than leaving wide dead margins on a large screen. */
+  max-width: 1700px;
   margin: 0 auto;
   width: 100%;
 }
@@ -151,7 +163,8 @@
   background: var(--surface);
   border: 1px solid var(--border-sub);
   border-radius: 10px;
-  padding: 26px;
+  /* 26px -> 34px 2026-08-04, same Montfort-structure borrow as .cm-grid's gap above. */
+  padding: 34px;
   position: relative;
 }
 
@@ -182,6 +195,25 @@
   gap: 12px;
 }
 
+/* Section index badge — structural borrow from Montfort's numbered division list (01/02/03),
+   added 2026-08-04. Existing tokens only (mono font, accent colour, hairline border) so it
+   reads as part of Terra's own system, not a foreign import. Left of the title, matching
+   Montfort's index-before-heading order. */
+.cm-card-index {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  margin-right: 10px;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  color: var(--accent, var(--gold));
+  border: 1px solid var(--border-sub);
+  border-radius: 3px;
+}
+
 .cm-card-title {
   font-size: 10px;
   letter-spacing: 0.16em;
@@ -198,7 +230,7 @@
 
 .cm-placeholder-note {
   margin: 0;
-  font-size: 9px;
+  font-size: 10px;
   letter-spacing: 0.1em;
   color: var(--text-muted);
   text-transform: uppercase;
@@ -278,7 +310,7 @@
 }
 
 .cm-product-live-label {
-  font-size: 8px;
+  font-size: 9px;
   color: var(--text-dim);
   letter-spacing: 0.12em;
 }
@@ -291,14 +323,14 @@
 }
 
 .cm-product-note {
-  font-size: 9px;
+  font-size: 10px;
   color: var(--text-muted);
   margin: 0 0 12px;
   line-height: 1.6;
 }
 
 .cm-badge {
-  font-size: 8px;
+  font-size: 9px;
   padding: 2px 6px;
   border-radius: 2px;
   letter-spacing: 0.12em;
@@ -332,7 +364,7 @@
   background: var(--accent-glow, var(--gold-glow));
   color: var(--accent, var(--gold));
   font-family: var(--font-mono);
-  font-size: 9px;
+  font-size: 10px;
   letter-spacing: 0.14em;
   cursor: pointer;
 }
@@ -368,7 +400,7 @@
 }
 
 .cm-nkap-sub {
-  font-size: 9px;
+  font-size: 10px;
   letter-spacing: 0.12em;
   color: var(--text-muted);
   margin-top: 6px;
@@ -403,7 +435,7 @@
 }
 
 .cm-card-status {
-  font-size: 9px;
+  font-size: 10px;
   letter-spacing: 0.1em;
   color: var(--text-dim);
 }
@@ -414,7 +446,7 @@
   border: 1px solid var(--border-sub);
   color: var(--text-dim);
   font-family: var(--font-mono);
-  font-size: 9px;
+  font-size: 10px;
   letter-spacing: 0.12em;
   padding: 4px 10px;
   border-radius: 2px;
@@ -444,7 +476,7 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  font-size: 9px;
+  font-size: 10px;
   letter-spacing: 0.16em;
   text-transform: uppercase;
   color: var(--accent, var(--gold));
@@ -477,7 +509,7 @@
 }
 
 .cm-display-label {
-  font-size: 9px;
+  font-size: 10px;
   letter-spacing: 0.16em;
   text-transform: uppercase;
   color: var(--text-dim);
@@ -546,42 +578,24 @@
   isolation: isolate;
 }
 
+/* Toned down and reshaped 2026-08-04: the original angular low-poly triangles (clip-path
+   polygons, sharp bevel facets) were a real contributor to the "looks like a game" read —
+   Will's own framing was that it read as an RPG-inventory/HUD ornament rather than a
+   professional product accent. Replaced with a soft quarter-circle glow (radial-gradient +
+   border-radius, no straight clipped edges) at lower opacity — still marks a card as "live"
+   the same way, just quieter and rounded instead of blade-like. */
 .cm-card > .cm-corner {
   position: absolute;
   width: 34px;
   height: 34px;
   pointer-events: none;
   z-index: 1;
-  opacity: 0.85;
-}
-
-/* Each corner is two facets: a solid triangle and a lighter one offset behind it, which is
-   what reads as a bevel rather than a flat wedge. clip-path keeps every edge straight —
-   curves would break the low-poly language of the reference. */
-.cm-corner::before,
-.cm-corner::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-}
-
-.cm-corner::before {
-  background: linear-gradient(135deg,
+  opacity: 0.5;
+  border-radius: 50%;
+  background: radial-gradient(circle at 0% 0%,
     var(--accent, var(--gold)) 0%,
-    color-mix(in srgb, var(--accent, var(--gold)) 55%, #000) 48%,
-    var(--accent, var(--gold)) 100%);
-  clip-path: polygon(0 0, 100% 0, 0 100%);
-  opacity: 0.9;
-}
-
-/* The second facet is smaller and offset, creating the two-tone break that makes the corner
-   look folded rather than printed. */
-.cm-corner::after {
-  background: linear-gradient(135deg,
-    color-mix(in srgb, var(--accent, var(--gold)) 75%, #fff) 0%,
-    var(--accent, var(--gold)) 100%);
-  clip-path: polygon(0 0, 58% 0, 0 58%);
-  opacity: 0.55;
+    color-mix(in srgb, var(--accent, var(--gold)) 45%, transparent) 45%,
+    transparent 75%);
 }
 
 .cm-corner-tl { top: 0; left: 0; }
