@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { ANCHOR, DOMAINS, DOMAIN_COLOR, SERVICE_COLOR } from './domainConfig';
-import { colorForStatus, shouldPulse, OFF_COLOR, UNBUILT_COLOR } from './healthColors';
+import { colorForStatus, shouldPulse, UNBUILT_COLOR } from './healthColors';
 
 // TFE-401 — full copy-paste port of terra-hq-site/terra_api_visualizer_phase5.js (repo ROOT,
 // not archive/) into React, per Will's explicit call: this must be the SAME visualizer, not a
@@ -188,7 +188,6 @@ export function createScene(canvas) {
   let cubes = [];
   let cubesByName = {};
   let pipelineLayer = null;
-  let pipelineEdges = [];
   const dynamicPipelineExtensions = {};
   const parentChildStates = {};
   let hoveredMesh = null;
@@ -316,8 +315,6 @@ export function createScene(canvas) {
         if (cube) edges.push({ cube1: terraCube, cube2: cube });
       });
     }
-    pipelineEdges = edges;
-
     edges.forEach(({ cube1, cube2 }) => {
       const curve = new THREE.LineCurve3(cube1.position, cube2.position);
       const tubeGeometry = new THREE.TubeGeometry(curve, tubeSegments, tubeRadius, 8, false);
@@ -995,7 +992,6 @@ export function createScene(canvas) {
 
     cubes = [];
     cubesByName = {};
-    pipelineEdges = [];
     renderer.dispose();
   }
 
