@@ -324,3 +324,21 @@ has been committed — 8 files modified in `terra-api-fe`, 2 in `terra-api` (`ap
 `react-router`/`react-router-dom` version mismatch and a `caniuse-lite` gap that broke the
 Docker build's PostCSS step — unrelated pre-existing issue, found while rebuilding for this
 work).
+
+## Refinement Notes — Future Product Pass
+**Date:** 2026-08-06  **Status:** Captured for later refinement work
+
+The next product-phase pass should treat the current dashboard and login experience as a first
+implementation rather than the final UX. The planned refinement direction is:
+- redesign the dashboard layout so it feels less like a single dense page and more like a guided
+  product surface with clearer hierarchy, spacing, and information grouping;
+- redesign the login experience to feel more polished and intentional, including stronger visual
+  focus, clearer affordances, and a more deliberate handoff back to the destination the user was
+  trying to reach;
+- replace the current one-page flow with navigable sections or tabs so users can move between
+  major areas of the product without feeling trapped in a single long screen;
+- keep this as a dedicated refinement/improvement phase rather than folding it into the current
+  functional implementation work, so visual polish and information architecture can evolve
+  independently from core behavior.
+
+These items should be carried forward as UX refinement tasks for the next design pass.
