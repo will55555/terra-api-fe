@@ -55,5 +55,17 @@ pipeline {
         failure {
             echo "Build #${BUILD_NUMBER} failed — check the stage logs above."
         }
+        always {
+            // WHY clean the npm cache?
+            // This pipeline has no Docker build (see file header — same-origin
+            // deploy means terra-api's own pipeline ships the build output), so
+            // terra-api's 'docker image prune' has nothing to prune here. What
+            // DOES accumulate on this agent across repeated 'npm ci' runs is the
+            // npm cache — same standing rule as terra-api's prune (disk cleanup
+            // designed into the pipeline up front, not retrofitted after a fill;
+            // see HUB_GUIDE.md Operating Incidents, the roms-pipeline disk-fill
+            // case), applied to what this pipeline actually creates.
+            sh 'npm cache clean --force'
+        }
     }
 }
