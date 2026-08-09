@@ -639,6 +639,12 @@ export function createScene(canvas, options = {}) {
   // silently dropped.
   let autoRotate = true;
   const AUTO_ROTATE_SPEED = 0.12;
+  // Idle-resume, added 2026-08-09 (Will's ask): auto-spin previously only resumed on an
+  // explicit double-click (the hint text's "DOUBLE-CLICK TO RESUME SPIN"). Now it also resumes
+  // on its own after 5s of no drag/click, so a user who just looks at the scene without
+  // interacting still sees it come back to life instead of staying frozen indefinitely.
+  let lastInteractionTime = Date.now();
+  const IDLE_RESUME_MS = 5000;
 
   function updatePointer(clientX, clientY) {
     const rect = renderer.domElement.getBoundingClientRect();
@@ -687,6 +693,7 @@ export function createScene(canvas, options = {}) {
     const now = Date.now();
     if (now - lastClickTime < CLICK_COOLDOWN) return;
     lastClickTime = now;
+    lastInteractionTime = now;
 
     const clickedMesh = pickAt(clientX, clientY);
     if (!clickedMesh?.userData.config) return;
@@ -813,6 +820,7 @@ export function createScene(canvas, options = {}) {
   function onPointerDown(event) {
     isDragging = true;
     autoRotate = false;
+    lastInteractionTime = Date.now();
     lastX = event.clientX;
     lastY = event.clientY;
     renderer.domElement.setPointerCapture?.(event.pointerId);
@@ -882,6 +890,10 @@ export function createScene(canvas, options = {}) {
     // The drift would also fight click-to-expand/release, which sets cube.position directly.
     // Dropping it fixes both and reads as a steadier, more deliberate diagram — closer to
     // Will's "professional, not a game" direction than a constantly wobbling lattice.
+
+    if (!autoRotate && !isDragging && Date.now() - lastInteractionTime >= IDLE_RESUME_MS) {
+      autoRotate = true;
+    }
 
     if (autoRotate) {
       cubeGroup.rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), delta * AUTO_ROTATE_SPEED);
