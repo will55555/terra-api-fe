@@ -78,7 +78,7 @@ export default function OverviewTab() {
             <tr><td style={{ color: 'var(--text)' }}>Host (Phase 3+)</td><td>Separate EC2 instance when load warrants</td></tr>
             <tr><td style={{ color: 'var(--text)' }}>State model</td><td>Stateless in Phase 1–2 — Caffeine in-memory cache, no persistent DB; Phase 3 adds persistent audit log store</td></tr>
             <tr><td style={{ color: 'var(--text)' }}>Why Spring Boot</td><td>ROMS infrastructure reuse (same EC2, same Jenkins CI/CD, same stack expertise at production level). Zero new infrastructure for Phase 1. ADR-001.</td></tr>
-            <tr><td style={{ color: 'var(--text)' }}>ADRs</td><td>ADR-001 through ADR-009 — all accepted</td></tr>
+            <tr><td style={{ color: 'var(--text)' }}>ADRs</td><td>ADR-001 through ADR-013 — 9 accepted, 4 proposed/designed (see ADRs tab)</td></tr>
           </tbody>
         </table>
       </div>

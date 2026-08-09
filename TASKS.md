@@ -83,3 +83,13 @@
       in the menu itself, so status is visible without navigating to the Overview tab. All three
       are independent, additive, and low-risk to build whenever this page gets its next design
       pass — none block the current popover-redesign work.
+- [ ] TFE-605 — Cube slow-pulse animation, noted 2026-08-09 for a future refinement pass: the
+      original (phase5/hq-site) visualizer had a slow ambient pulse on cubes, which this React
+      port (`terraScene.js`) does not currently reproduce. Deliberately deferred same session
+      found — Will's own framing was "that'll be lots of math," i.e. real animation-curve work
+      (likely a per-cube sine/easing driver on emissive intensity or scale, synced but offset per
+      cube so they don't pulse in lockstep), not a quick add. Note: `shouldPulse(status)` already
+      exists and is wired for health-driven pulsing (see `applyHealth` in `terraScene.js`,
+      `healthColors.js`) — confirm whether this ask is about THAT pulse not firing/looking right,
+      or a separate always-on ambient pulse phase5 had independent of health state, before
+      starting the implementation.

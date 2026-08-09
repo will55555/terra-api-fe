@@ -10,7 +10,7 @@ export default function AdrsTab() {
         <span className="sh-index">11</span>
         <span className="sh-title">Architecture Decision Records</span>
         <span className="sh-line" />
-        <span className="sh-note">terra-api-adr-001 through terra-api-adr-010 — all accepted — ecosystem-wide CI/CD patterns in adr-010</span>
+        <span className="sh-note">terra-api-adr-001 through terra-api-adr-013 — 9 accepted, 4 proposed/designed — see individual cards for status</span>
       </div>
 
       <div className="adr-list">
@@ -27,9 +27,9 @@ export default function AdrsTab() {
           <div className="adr-id">002</div>
           <div>
             <div className="adr-title">Notion → Obsidian Selective Push</div>
-            <div className="adr-desc">Selective sync workflow — specific Notion content can be pushed to the Obsidian vault via Terra API's proxy endpoint. Development tooling only, not a production dependency. Triggered by webhook or manual dashboard action. Not a full two-way sync. <strong>terra-api-adr-002</strong></div>
+            <div className="adr-desc">Selective sync workflow — specific Notion content can be pushed to the Obsidian vault via Terra API's proxy endpoint. Development tooling only, not a production dependency. Triggered by webhook or manual dashboard action. Not a full two-way sync. Designed, not built — n8n workflow, Notion DB property, and ingestion pipeline remain unbuilt. <strong>terra-api-adr-002</strong></div>
           </div>
-          <span className="badge b-p2">Phase 2</span>
+          <span className="badge b-proposed">Designed, Not Built</span>
         </div>
 
         <div className="adr-card">
@@ -98,10 +98,37 @@ export default function AdrsTab() {
         <div className="adr-card">
           <div className="adr-id">010</div>
           <div>
-            <div className="adr-title">Ecosystem CI/CD &amp; Deployment Strategy</div>
-            <div className="adr-desc">All Terra services (ROMS, Terra API, PIOS, business verticals) follow the ROMS CI/CD pattern: Jenkinsfile declarative pipeline + Docker multi-stage builds. Terra API and ROMS are each live on their own dedicated EC2 instance, with a shared Jenkins instance running CI/CD for both. Docker images pushed to Docker Hub registry. Ecosystem health consumed via dedicated public/customer-scoped API endpoints (not the management port, which is deliberately unpublished) for visualizer and health bus consumption. Environment-driven config via docker.env and Spring profiles. <strong>terra-api-adr-010</strong></div>
+            <div className="adr-title">Tier/Role Claim Separation (HQ Route Gating)</div>
+            <div className="adr-desc">Splits two concerns the existing <code>tier</code> claim conflated: rate-limit generosity (how much a caller can do) vs. audience/page access (who a caller is and what they should see). <code>tier</code> stays untouched, rate-limiting only. A new, independent <code>role</code>/<code>aud</code> claim is added to the JWT contract for HQ route gating (public/customer/investor/internal), decoupled from throughput. Trigger-gated, not calendar-gated: not built yet because nothing today reads <code>role</code> — building it before HQ has a real consumer (terra-api-fe's <code>/customer</code> or <code>/internal</code> section) would be premature scaffolding. <strong>terra-api-adr-010</strong></div>
           </div>
-          <span className="badge b-all">All Phases</span>
+          <span className="badge b-proposed">Proposed</span>
+        </div>
+
+        <div className="adr-card">
+          <div className="adr-id">011</div>
+          <div>
+            <div className="adr-title">Customer Service Entitlement Model</div>
+            <div className="adr-desc">A <code>customer_service_access(customer_id, service_id)</code> Postgres table, queried at request time by <code>GET /api/v1/ecosystem/health</code> and keyed on the JWT's <code>sub</code> claim — answers &quot;what can this customer see,&quot; distinct from ADR-003's &quot;who is this caller.&quot; The schema seam exists and the endpoint works end-to-end, but the table ships empty: no customer identity exists yet to seed it against (the only <code>sub</code> issued today is ROMS's service account, not a human customer). Entitlement-assignment tooling is deliberately deferred until a second real customer account is provisioned. <strong>terra-api-adr-011</strong></div>
+          </div>
+          <span className="badge b-p3">Phase 3</span>
+        </div>
+
+        <div className="adr-card">
+          <div className="adr-id">012</div>
+          <div>
+            <div className="adr-title">Internal Operator Dashboard</div>
+            <div className="adr-desc">A separate <code>/internal</code> route inside terra-api-fe (not a separate app), gated on the <code>internal</code> audience — built after prod ran degraded for roughly 40 hours undetected. Authorization is enforced server-side; the route gate is UX only. Requires BOTH <code>role=internal</code> AND an explicit <code>ops:read</code> scope — role alone would accidentally grant the ROMS service account (legitimately <code>role=internal</code> as infrastructure) visibility into cross-customer operator data. A real operator account now exists (provisioned directly against prod 2026-08-09, TAPI-025) — the gate has a live consumer, not just built-and-waiting. <strong>terra-api-adr-012</strong></div>
+          </div>
+          <span className="badge b-proposed">Proposed</span>
+        </div>
+
+        <div className="adr-card">
+          <div className="adr-id">013</div>
+          <div>
+            <div className="adr-title">Customer Identity &amp; Login Strategy</div>
+            <div className="adr-desc">Resolves the gap ADR-011 surfaced: no user database exists for real customer logins, only a single self-issued service-account credential. Deliberately unscheduled — sequenced after the EC2 right-size and OS-patching work closes, and blocked on pending frontend and design rework (both TBD scope). The <code>/internal</code> operator gate (ADR-012) also has no way to provision a real operator identity until an identity system exists. <strong>terra-api-adr-013</strong></div>
+          </div>
+          <span className="badge b-proposed">Proposed, Unscheduled</span>
         </div>
       </div>
     </div>

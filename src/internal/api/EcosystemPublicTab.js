@@ -32,7 +32,7 @@ export default function EcosystemPublicTab() {
           </div>
           <div className="eco-card">
             <div className="eco-card-title">Foundation Layer</div>
-            <div className="eco-card-desc">Terra API is the shared services hub: unified authentication, webhooks, health reporting, and event streaming. All business domains plug into this foundation.</div>
+            <div className="eco-card-desc">Terra API is the shared services hub: unified authentication, health/quarantine reporting, rate limiting, an audit log bus, feature flags, and billing primitives. All business domains plug into this foundation.</div>
           </div>
           <div className="eco-card">
             <div className="eco-card-title">Regional Strategy</div>
