@@ -30,9 +30,12 @@ export default function OverviewTab() {
         </div>
       </div>
 
-      {/* margin/height trimmed from the HTML's 30px/40px/480px (2026-08-09) — same reasoning
-          as .api-hero's padding cut above: brings the visualizer closer to the fold. */}
-      <div className="viz-frame" style={{ width: '80%', maxWidth: '1100px', margin: '16px auto 32px', height: '420px', position: 'relative', padding: 0, overflow: 'hidden', borderRadius: '6px' }}>
+      {/* margin/height trimmed from the HTML's 30px/40px/480px (2026-08-09), then cut further
+          in a 2nd pass same day (420px → 360px, margins tightened) — combined with the hero's
+          own 2nd-pass trim (api-dashboard.css), the goal is the full visualizer fitting above
+          the fold on page load without scrolling, which the first round of cuts still didn't
+          achieve. */}
+      <div className="viz-frame" style={{ width: '80%', maxWidth: '1100px', margin: '8px auto 20px', height: '360px', position: 'relative', padding: 0, overflow: 'hidden', borderRadius: '6px' }}>
         {/* transparent: true — this is the one deliberate deviation from a literal port (per
             Will: only the visualizer's BACKGROUND needs to match the HTML, not the whole
             component). The HTML's hero visualizer is a transparent iframe so .viz-frame's

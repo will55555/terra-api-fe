@@ -181,32 +181,42 @@ body {
   .api-shell .api-tabs { top: 48px; }
 }
 
-/* ─── Tab drawer — opened via .nav-menu-toggle, at any viewport width (2026-08-09, Will's
-   call — not gated to mobile). No CSS display:none/media-query gating: presence in the DOM is
-   controlled entirely by React state (menuOpen in ApiDashboard.js), so it works identically
-   whether the horizontal .api-tabs bar above is also visible (desktop) or not. Styled to match
-   the same frosted/silver language as everything else on this page. ─── */
+/* ─── Tab popover — opened via .nav-menu-toggle, at any viewport width (2026-08-09, Will's
+   call — not gated to mobile). Redesigned same day (2nd pass) from a full-width sticky bar
+   into a small anchored popover, per Will's reference (YouTube's account dropdown — compact,
+   floats over page content, closes on outside click) rather than a bar that pushed/covered the
+   whole viewport width. .nav-menu-anchor wraps the hamburger button itself so the popover can
+   be positioned absolutely relative to IT specifically, not the whole nav bar. ─── */
 
-.api-shell .api-tab-drawer {
+.api-shell .nav-menu-anchor {
+  position: relative;
+  display: inline-flex;
+}
+
+.api-shell .api-tab-popover {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  z-index: 300;
   display: flex;
   flex-direction: column;
-  position: sticky;
-  top: 56px;
-  z-index: 100;
+  min-width: 220px;
   background: var(--surface);
-  border-bottom: 1px solid var(--border);
-  max-height: calc(100vh - 56px);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35), 0 2px 8px rgba(0, 0, 0, 0.2);
+  overflow: hidden;
+  max-height: calc(100vh - 80px);
   overflow-y: auto;
 }
 
-:root[data-theme='light'] .api-shell .api-tab-drawer { background: rgba(201, 206, 212, 0.95); }
-
-@media (max-width: 768px) {
-  .api-shell .api-tab-drawer { top: 48px; max-height: calc(100vh - 48px); }
+:root[data-theme='light'] .api-shell .api-tab-popover {
+  background: rgba(201, 206, 212, 0.98);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18), 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
-.api-shell .api-tab-drawer-item {
-  padding: 14px 20px;
+.api-shell .api-tab-popover-item {
+  padding: 12px 18px;
   font-size: 11px;
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -217,11 +227,12 @@ body {
   border-bottom: 1px solid var(--border-sub);
   background: none;
   font-family: 'JetBrains Mono', monospace;
+  white-space: nowrap;
 }
 
-.api-shell .api-tab-drawer-item:last-child { border-bottom: none; }
-.api-shell .api-tab-drawer-item:hover { color: var(--api); }
-.api-shell .api-tab-drawer-item-active { color: var(--api); background: var(--gold-glow, rgba(201, 168, 76, 0.08)); }
+.api-shell .api-tab-popover-item:last-child { border-bottom: none; }
+.api-shell .api-tab-popover-item:hover { color: var(--api); background: var(--gold-glow, rgba(201, 168, 76, 0.06)); }
+.api-shell .api-tab-popover-item-active { color: var(--api); background: var(--gold-glow, rgba(201, 168, 76, 0.08)); }
 
 .api-shell .api-tabs::-webkit-scrollbar { display: none; }
 
@@ -245,7 +256,10 @@ body {
 .api-shell .api-tab-active { color: var(--api); border-bottom-color: var(--api); }
 
 .api-shell .api-content {
-  padding: 68px 40px 116px;
+  /* Top padding cut from 68px 2026-08-09 (2nd pass) — same reasoning as .api-hero's own
+     padding cut below: stacked with the hero + viz-frame's own spacing, the full visualizer
+     still didn't fit above the fold on page load even after the first round of trims. */
+  padding: 24px 40px 116px;
   max-width: 1100px;
   margin: 0 auto;
 }
@@ -254,13 +268,17 @@ body {
 
 .api-shell .api-hero {
   text-align: center;
-  margin: -68px -40px 52px;
+  /* margin-top matched to .api-content's own top padding (24px, cut from 68px in the same
+     2026-08-09 2nd pass) so the hero sits flush against the tab bar rather than either
+     overshooting past it or leaving a gap — was -68px when .api-content's padding was 68px. */
+  margin: -24px -40px 32px;
   /* Vertical padding cut from the HTML's 88px/56px (2026-08-09, Will's explicit call) — this
      page has sticky nav+tabs chrome above the hero that the static HTML page doesn't stack in
      the same way, so a literal 1:1 port pushed the visualizer below the fold on load. A
      deliberate deviation from exact parity, not a bug fix — horizontal padding/everything else
-     unchanged. */
-  padding: 40px 40px 28px;
+     unchanged. Cut further in a 2nd pass same day — the first cut (88px→40px) still wasn't
+     enough for the full visualizer to fit above the fold. */
+  padding: 20px 40px 16px;
   position: relative;
   overflow: hidden;
   /* Gradient stops + blur eased from the HTML's 0.7/0.4/blur(5px) (2026-08-09) — those values
@@ -289,7 +307,10 @@ body {
 
 .api-shell .api-logo {
   font-family: 'Cormorant Garamond', serif;
-  font-size: 64.8px;
+  /* Cut from the HTML's 64.8px 2026-08-09 (2nd pass) — the single biggest contributor to the
+     hero's content height; the visualizer still didn't fit above the fold with the HTML's
+     original size even after trimming the hero's own padding. */
+  font-size: 40px;
   font-weight: 300;
   letter-spacing: 0.4em;
   color: var(--api);
@@ -304,7 +325,7 @@ body {
   color: var(--text-dim);
   letter-spacing: 0.3em;
   text-transform: uppercase;
-  margin-bottom: 24px;
+  margin-bottom: 16px;
 }
 
 .api-shell .hero-pills { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }

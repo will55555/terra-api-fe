@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import HeartbeatBackdrop from './HeartbeatBackdrop';
@@ -54,10 +54,27 @@ export default function ApiDashboard() {
   const { logout } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const [activeTab, setActiveTab] = useState('overview');
-  // Mobile-only tab drawer (2026-08-09, Will's ask — no HTML source equivalent; the static page
-  // just lets its 9 tabs horizontally scroll below the 768px breakpoint). Closed by default;
-  // toggled by the hamburger button that only renders at that same breakpoint via CSS.
+  // Tab menu, redesigned 2026-08-09 (2nd pass) from a full-width sticky bar into a small
+  // anchored popover — Will's reference was YouTube's account dropdown (compact, floats over
+  // page content, closes on outside click), not a drawer that pushes/covers the whole viewport
+  // width. No HTML source equivalent (the static page just lets its 9 tabs horizontally scroll
+  // below 768px) — this is a React-only addition throughout.
   const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef(null);
+
+  // Close on outside click — standard popover behavior, absent from the old full-width-bar
+  // version (which didn't need it, since selecting a tab already closed it and there was no
+  // "click elsewhere to dismiss" expectation for a bar spanning the full page width).
+  useEffect(() => {
+    if (!menuOpen) return undefined;
+    const handleClickOutside = (event) => {
+      if (menuRef.current && !menuRef.current.contains(event.target)) {
+        setMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [menuOpen]);
 
   const selectTab = (id) => {
     setActiveTab(id);
@@ -97,19 +114,43 @@ export default function ApiDashboard() {
           <button type="button" className="theme-toggle nav-signout" onClick={logout} title="Sign out">⏻</button>
           {/* Always visible at every width (2026-08-09, Will's call — not gated behind the
               768px breakpoint like the first version was; moved from the left side to here
-              2026-08-09 per Will's follow-up). Opens the same tab drawer the tab bar itself
-              still shows underneath — an additional quick-access control, not a replacement
-              for the horizontal bar at desktop width. */}
-          <button
-            type="button"
-            className="theme-toggle nav-menu-toggle"
-            onClick={() => setMenuOpen((open) => !open)}
-            aria-label={menuOpen ? 'Close menu' : 'Open menu'}
-            aria-expanded={menuOpen}
-            title="Menu"
-          >
-            {menuOpen ? '✕' : '☰'}
-          </button>
+              2026-08-09 per Will's follow-up). Opens the same tab selector the horizontal bar
+              below provides — an additional quick-access control, not a replacement for it at
+              desktop width. menuRef wraps both the button and its popover so the outside-click
+              handler above can tell "inside this control" from "elsewhere on the page." */}
+          <div className="nav-menu-anchor" ref={menuRef}>
+            <button
+              type="button"
+              className="theme-toggle nav-menu-toggle"
+              onClick={() => setMenuOpen((open) => !open)}
+              aria-label={menuOpen ? 'Close menu' : 'Open menu'}
+              aria-expanded={menuOpen}
+              title="Menu"
+            >
+              {menuOpen ? '✕' : '☰'}
+            </button>
+            {menuOpen && (
+              // Popover redesign (2026-08-09, 2nd pass) — was a full-width sticky bar spanning
+              // the page, replaced per Will's reference (YouTube's compact anchored account
+              // dropdown). Same tab set as the horizontal bar below, just in popover form —
+              // role="tablist"/"tab" (matching that bar) rather than "menu", since this is a
+              // second presentation of the same tab-selection control, not an actions menu.
+              <div className="api-tab-popover" role="tablist">
+                {TABS.map((tab) => (
+                  <button
+                    key={tab.id}
+                    type="button"
+                    role="tab"
+                    aria-selected={activeTab === tab.id}
+                    className={`api-tab-popover-item${activeTab === tab.id ? ' api-tab-popover-item-active' : ''}`}
+                    onClick={() => selectTab(tab.id)}
+                  >
+                    {tab.label}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </nav>
 
@@ -127,26 +168,6 @@ export default function ApiDashboard() {
           </button>
         ))}
       </div>
-
-      {menuOpen && (
-        // Same tab set as the horizontal bar above, just re-rendered as a vertical drawer for
-        // narrow viewports — role="tablist"/"tab" (matching that bar) rather than "menu", since
-        // this is a second presentation of the same tab-selection control, not an actions menu.
-        <div className="api-tab-drawer" role="tablist">
-          {TABS.map((tab) => (
-            <button
-              key={tab.id}
-              type="button"
-              role="tab"
-              aria-selected={activeTab === tab.id}
-              className={`api-tab-drawer-item${activeTab === tab.id ? ' api-tab-drawer-item-active' : ''}`}
-              onClick={() => selectTab(tab.id)}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </div>
-      )}
 
       <div className="api-content">
         {activeTab === 'overview' && <OverviewTab />}

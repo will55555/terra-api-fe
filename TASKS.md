@@ -58,3 +58,28 @@
       needed: `public/favicon.ico`, `public/logo192.png`, `public/logo512.png` (referenced from
       `public/index.html` and `public/manifest.json`) — replace in place with matching
       filenames once designed.
+- [ ] TFE-603 — JWT session expiry has no user-facing handling. Found 2026-08-09: tokens expire
+      after 1 hour (`terra-api`'s `application.yaml`, `jwt-expiration-ms: 3600000`), no refresh
+      mechanism exists, and the frontend gives zero warning when it happens — `/api/v1/internal/
+      ecosystem` starts 401ing and `OverviewTab`/`OperatorTab`'s `EcosystemVisualizer` just shows
+      a permanent "STATUS UNAVAILABLE / Reconnecting" wireframe state that never resolves on its
+      own. Confirmed live: logging out and back in immediately fixes it — the bug is purely the
+      silent-failure UX, not a backend problem. Needs one of: (a) a real refresh-token flow
+      (bigger, touches `AuthService`/`TokenIssuer` on the backend), or (b) at minimum, detect a
+      401 from an authenticated fetch and show a clear "Session expired — log in again" prompt
+      /redirect instead of the current infinite silent retry loop (`useOperatorEcosystem.js` and
+      `useEcosystemHealth.js` both poll on an interval and don't currently distinguish
+      "transient network error, keep retrying" from "401, stop and prompt"). Deliberately not
+      fixed same session found — auth-flow work deserves its own focused pass.
+- [ ] TFE-604 — Menu popover feature ideas, noted 2026-08-09 for a future refinement pass
+      (explicitly NOT scoped/built yet, just captured so they aren't lost): once the hamburger
+      menu becomes a real anchored popover (see the same-day redesign that replaced the
+      full-width drawer), consider adding: (1) account info display at the top — logged-in
+      email + role (e.g. "admin@terra-hq.com · Operator"), so it's visible without opening dev
+      tools, similar to how YouTube's account dropdown shows the channel name/avatar; (2) quick
+      links to `/dashboard` (customer view) and `/login` (switch account) directly in the menu,
+      since Will is now routinely testing both operator and customer views from one browser;
+      (3) a small live system-status indicator (colored dot reflecting overall ecosystem health)
+      in the menu itself, so status is visible without navigating to the Overview tab. All three
+      are independent, additive, and low-risk to build whenever this page gets its next design
+      pass — none block the current popover-redesign work.
