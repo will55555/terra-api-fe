@@ -146,7 +146,6 @@ body {
 
 .api-shell .theme-toggle:hover { border-color: var(--gold); }
 .api-shell .theme-icon { color: #f5c518; }
-:root[data-theme='light'] .api-shell .theme-toggle { background: #0a0c10; border-color: #0a0c10; }
 
 /* nav-signout is React-only (no HTML equivalent) — same circular affordance as theme-toggle,
    just a different glyph/action, so it reads as part of the same control cluster. */

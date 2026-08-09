@@ -694,6 +694,14 @@ export function createScene(canvas, options = {}) {
     const config = clickedMesh.userData.config;
     const cubeName = config.name;
 
+    // ROMS cube click opens the live ROMS site instead of expand/collapse (2026-08-09, Will's
+    // call — hq-site's own public visualizer now redirects to this app instead of running its
+    // own copy, so this is the only visualizer where clicking ROMS needs to go anywhere).
+    if (config.serviceId === 'roms') {
+      window.open('http://100.60.7.24', '_blank', 'noopener,noreferrer');
+      return;
+    }
+
     if (config.isAnchor) {
       cubes.forEach((cube) => {
         const cubeConfig = cube.userData.config;
