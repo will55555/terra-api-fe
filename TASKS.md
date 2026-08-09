@@ -28,3 +28,33 @@
 - [x] TFE-501 — Fix unauthenticated SPA reachability so the dashboard can actually load without getting blocked by security rules.
 - [ ] TFE-502 — Redirect unauthenticated users to login instead of leaving them on a broken page when auth is required.
 - [ ] TFE-503 — Expand frontend test coverage so the visualizer and dashboard remain stable as the feature set grows.
+
+## Backlog — Refinement / Future Design Work
+- [ ] TFE-601 — "My Services" / "Ecosystem" tab split. Design brainstormed 2026-08-08, not yet
+      built — deliberately shelved for a dedicated design session, not today's work. Root
+      observation: today ALL 8 domain cubes + all launchpad cards render identically for every
+      customer regardless of entitlement (`customer_service_access` only ever changes cube/card
+      COLOR via `statusByServiceId`, never visibility) — conflates ecosystem-wide product
+      maturity (`productConfig.js`'s `isLocked`, same for everyone) with per-customer
+      entitlement (currently unused by the frontend for gating anything). Agreed direction:
+      two tabs inside `Dashboard.js` (no routing change) — "My Services" (new default; reuses
+      `ProductLaunchpad`'s card grid filtered to `PRODUCTS.filter(p => p.serviceId &&
+      statusByServiceId[p.serviceId])`, no 3D scene, needs an honest empty state for zero
+      entitlements) and "Ecosystem" (today's full `terraScene.js` topology + unfiltered
+      launchpad, unchanged — stays the discovery/upsell surface). Deferred/known gap, not
+      addressed: entitled-but-currently-unreported services (health endpoint silently omitting
+      a truly-entitled service during an outage) — revisit if actually observed, not designed
+      against speculatively. A separate, later idea floated in the same conversation — some kind
+      of 3D/animated transition for the customer review experience — is its own future design
+      project, not scoped here at all.
+- [ ] TFE-602 — Replace placeholder branding on the /internal (ApiDashboard) page and app-wide
+      favicon with Will's real designs, once they exist. Two independent slots, same status
+      (placeholder now, design TBD, likely animated per Will 2026-08-09):
+      (1) Nav logo — `ApiDashboard.js`'s `.nav-brand-placeholder` span (currently plain text
+      "LOGO" in a dashed box, deliberately unstyled so it reads as "not built" rather than a
+      real design choice — same pattern as `Login.js`'s social-login placeholders). Swap the
+      whole span for the real mark/animation; styling lives in `api-dashboard.css`.
+      (2) Browser tab favicon — still CRA's default React logo. Three files, no code changes
+      needed: `public/favicon.ico`, `public/logo192.png`, `public/logo512.png` (referenced from
+      `public/index.html` and `public/manifest.json`) — replace in place with matching
+      filenames once designed.

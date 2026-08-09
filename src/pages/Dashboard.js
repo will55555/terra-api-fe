@@ -87,7 +87,7 @@ export default function Dashboard() {
               they would be redirected away from. Not a security measure: the route exists in
               the bundle regardless, and the server is what refuses the data. */}
           {isOperator() && (
-            <Link to="/internal" className="cm-theme-toggle">OPERATOR</Link>
+            <Link to="/" className="cm-theme-toggle">OPERATOR</Link>
           )}
           <button type="button" className="cm-signout" onClick={logout}>
             SIGN OUT

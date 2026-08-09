@@ -1,0 +1,195 @@
+/* Login page — brought onto the shared design system (dashboard.css's tokens: --gold,
+   --surface, --bg, JetBrains Mono/Cormorant Garamond) 2026-08-09. Previously used generic
+   Create-React-App boilerplate colors (blue button, plain white card) disconnected from every
+   other page in this app. dashboard.css is imported globally via Dashboard.js/OperatorDashboard
+   .js/ApiDashboard.js, all of which set :root tokens — Login renders standalone (no dashboard
+   wrapper), so it defines its own minimal fallback token set here rather than depending on one
+   of those pages having mounted first. */
+
+:root {
+  --login-bg: #0a0c10;
+  --login-surface: #181c24;
+  --login-gold: #c9a84c;
+  --login-gold-dim: #8a6f30;
+  --login-text: #e8e4dc;
+  --login-text-dim: #7a7570;
+  --login-border: rgba(201, 168, 76, 0.18);
+  --login-border-sub: rgba(255, 255, 255, 0.08);
+  --login-red: #f87171;
+}
+
+.login-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--login-bg);
+  padding: 24px;
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+}
+
+.login-card {
+  width: min(100%, 420px);
+  background: var(--login-surface);
+  color: var(--login-text);
+  border: 1px solid var(--login-border);
+  border-radius: 8px;
+  box-shadow: 0 20px 45px rgba(0, 0, 0, 0.4);
+  padding: 36px 32px;
+}
+
+.login-brand {
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+.login-brand-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 28px;
+  font-weight: 400;
+  letter-spacing: 0.3em;
+  color: var(--login-gold);
+}
+
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.login-form h1 {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 22px;
+  font-weight: 400;
+  color: var(--login-text);
+  margin: 0;
+}
+
+.login-subtitle {
+  margin: -6px 0 6px;
+  font-size: 12px;
+  color: var(--login-text-dim);
+}
+
+.login-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--login-text-dim);
+}
+
+.login-field input {
+  padding: 10px 12px;
+  border: 1px solid var(--login-border-sub);
+  border-radius: 4px;
+  background: var(--login-bg);
+  color: var(--login-text);
+  font-family: inherit;
+  font-size: 13px;
+}
+
+.login-field input:focus {
+  outline: none;
+  border-color: var(--login-gold-dim);
+}
+
+.login-error {
+  margin: 0;
+  font-size: 12px;
+  color: var(--login-red);
+}
+
+.login-button {
+  margin-top: 8px;
+  padding: 11px 14px;
+  border: 1px solid var(--login-gold-dim);
+  border-radius: 4px;
+  background: rgba(201, 168, 76, 0.1);
+  color: var(--login-gold);
+  font-family: inherit;
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.login-button:hover {
+  background: rgba(201, 168, 76, 0.18);
+  border-color: var(--login-gold);
+}
+
+/* ─── Social sign-in (placeholders — see Login.js's SOCIAL_PROVIDERS comment) ────────── */
+
+.login-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 22px 0 18px;
+  color: var(--login-text-dim);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.login-divider::before,
+.login-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--login-border-sub);
+}
+
+.login-social {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.login-social-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border: 1px solid var(--login-border-sub);
+  border-radius: 4px;
+  background: var(--login-bg);
+  color: var(--login-text-dim);
+  font-family: inherit;
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* Terra-branded placeholder marks, NOT real provider logos — a plain ring for Google's slot,
+   a plain rounded square for Apple's. Swap for real iconography only alongside real OAuth
+   wiring, not before — an unstyled placeholder honestly reads as "not built yet"; a borrowed
+   third-party logo would not. */
+.login-social-icon {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+  border: 1.5px solid currentColor;
+}
+
+.login-social-icon-google {
+  border-radius: 50%;
+}
+
+.login-social-icon-apple {
+  border-radius: 3px;
+}
+
+.login-social-note {
+  text-align: center;
+  margin: 4px 0 0;
+  font-size: 10px;
+  color: var(--login-text-dim);
+  letter-spacing: 0.06em;
+}

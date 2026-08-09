@@ -129,9 +129,18 @@ function createStarfield() {
  * inside it.
  *
  * @param {HTMLCanvasElement} canvas
+ * @param {{transparent?: boolean}} [options] - transparent: true skips scene.background/fog
+ *   entirely (renderer already has alpha:true) so the canvas shows whatever sits behind it in
+ *   the DOM instead of painting its own opaque backdrop. Added 2026-08-09 for OverviewTab's
+ *   hero visualizer, which sits inside .viz-frame's frosted-glass panel and needs the circuit
+ *   backdrop to show through — matching terra_api_strategy.html's own transparent iframe
+ *   embed. Defaults to false so every other caller (Dashboard.js, OperatorTab.js) keeps its
+ *   existing opaque dark/light backdrop unchanged; setTheme() still no-ops the background in
+ *   transparent mode, since there is nothing to repaint.
  * @returns {{applyHealth: Function, resize: Function, dispose: Function, setHoverLabelElement: Function, setTheme: Function}}
  */
-export function createScene(canvas) {
+export function createScene(canvas, options = {}) {
+  const { transparent = false } = options;
   const CUBE_CONFIG = buildCubeConfig();
   // DEV-ONLY TEST TOOLING, added 2026-08-04 — pairs with useEcosystemHealth.js's mock, kept
   // intentionally. Production only maps ROMS/PIOS (the only domains with a real serviceId), so
@@ -146,10 +155,17 @@ export function createScene(canvas) {
     : buildServiceIdByCubeName();
 
   const scene = new THREE.Scene();
-  // Nudged one step lighter than phase5's original 0x04060f per Will's 2026-08-04 request
-  // ("tiny bit lighter") — cube/tube colours themselves are untouched, this is background only.
-  scene.background = new THREE.Color(0x0a0e1a);
-  scene.fog = new THREE.FogExp2(0x0a0e1a, 0.03);
+  if (!transparent) {
+    // Nudged one step lighter than phase5's original 0x04060f per Will's 2026-08-04 request
+    // ("tiny bit lighter") — cube/tube colours themselves are untouched, this is background
+    // only.
+    scene.background = new THREE.Color(0x0a0e1a);
+    scene.fog = new THREE.FogExp2(0x0a0e1a, 0.03);
+  }
+  // scene.background stays null in transparent mode — renderer already has alpha:true, so a
+  // null background (not an opaque THREE.Color) is what actually makes the canvas see-through.
+  // Fog is skipped too: FogExp2 blends toward its own color as depth increases, which reads as
+  // a hazy vignette against a transparent canvas rather than atmospheric depth.
   scene.add(createStarfield());
 
   const cubeGroup = new THREE.Group();
@@ -964,6 +980,7 @@ export function createScene(canvas) {
   }
 
   function setTheme(theme) {
+    if (transparent) return; // nothing to repaint — see createScene's transparent option
     const bgColor = theme === 'light' ? 0xe5e1dc : 0x0a0e1a;
     scene.background = new THREE.Color(bgColor);
     if (scene.fog) scene.fog.color = new THREE.Color(bgColor);

@@ -342,3 +342,389 @@ implementation rather than the final UX. The planned refinement direction is:
   independently from core behavior.
 
 These items should be carried forward as UX refinement tasks for the next design pass.
+
+## Deploy Status Correction + Jenkinsfile Cleanup Stage + Webhook Payload URL
+**Date:** 2026-08-08  **Status:** Complete
+
+### Goal
+Resolve a stale HUB_STATE note ("not production-ready") that had been carrying since TFE-401,
+add a post-build cleanup stage to this repo's Jenkinsfile matching terra-api's own disk-cleanup
+standing rule, and identify the correct GitHub webhook payload URL for push-triggered builds.
+
+### Deploy status was stale, not accurate
+HUB_STATE's terra-api-fe section read "Feature-complete... but still NOT production-ready (only
+ever run via Docker dev compose / CRA dev server, no real ROMS/PIOS deployment to test
+against)." That conflated two different things: whether this repo has ever been *deployed*
+(false — it has, since TFE-201/2026-08-02) with whether it's been *integration-tested* against
+real ROMS/PIOS data (true — it hasn't). Verified live via
+`curl -sI https://api.terra-hq.com/` returning a real CRA build shell
+(`<script defer src="/static/js/main.054491d5.js">`), `Last-Modified` same-day — confirms
+same-origin embed (adr-009) has been shipping this repo's build output inside terra-api's own
+jar the entire time via terra-api's Jenkinsfile "Checkout/Build/Test/Copy Frontend" stages, not
+a separate undeployed pipeline. HUB_STATE corrected same session.
+
+### Jenkinsfile cleanup stage — landed on `npm cache verify`, not `clean --force`
+terra-api's own Jenkinsfile runs `docker image prune -f` in a `post { always {} }` block —
+part of the hub's standing "CI/CD Disk Cleanup — Design-Time, Not Retrofit" rule (from the
+2026-08-08 ROMS disk-fill incident). This repo's pipeline has no Docker build at all (same-origin
+deploy — terra-api's own pipeline ships the build output, not this repo's), so `docker image
+prune` had nothing to target here.
+
+**First attempt:** `npm cache clean --force`, matching the *shape* of terra-api's rule
+(unconditional, in `post { always {} }`). Reconsidered after Will flagged the speed cost — a full
+wipe on every build throws away cache the *next* `npm ci` would have reused, for no
+corresponding benefit.
+
+**Why not a size-threshold gate either:** considered gating the clean behind a `du`-based MB
+threshold (only clean when cache exceeds some size). Rejected — the hub's standing disk-cleanup
+rule is *deliberately* unconditional specifically because gradual silent accumulation was the
+actual failure mode in the ROMS incident (a threshold that's never checked or never crossed
+reproduces exactly that blind spot). But that rule was written for Docker image layers, which do
+genuinely leak disk space across builds — npm's cache is content-addressed and self-managing, so
+it doesn't have Docker's unbounded-growth problem in the first place. Neither the unconditional
+wipe nor a threshold gate was solving a real problem for npm specifically.
+
+**Final:** `npm cache verify` — prunes corrupted/unreachable cache entries only, keeps everything
+reusable. Matches the actual risk profile (corruption, not unbounded growth) instead of importing
+Docker's cleanup pattern wholesale. Commits: `813959a` (clean --force, superseded), `8b9ae71`
+(final verify version).
+
+### GitHub webhook payload URL identified
+terra-api-fe uses Jenkins multibranch jobs (`terra-api-fe-main` / `terra-api-fe-branches`,
+discovered via the `github-app-terra-api` GitHub App — see Phase 2 above). The payload URL is
+the same single global receiver terra-api's own SonarQube-triggered webhook already uses on the
+shared `terra-jenkins` instance: `http://3.211.62.86:8090/github-webhook/` (content type
+`application/json`, "Just the push event") — Jenkins dispatches to whichever job matches the
+incoming repo, so this is not a per-repo path.
+
+### Known Limitations / Next
+- Webhook payload URL identified but not yet confirmed added to the GitHub repo settings, and
+  not yet confirmed that `terra-api-fe-main`/`-branches` jobs have "GitHub hook trigger for
+  GITScm polling" enabled (may still be relying on periodic scan instead of push-triggered
+  builds — same gap terra-api itself had before its SonarQube work added the webhook).
+
+## Terra API Internal Surface — HTML-to-React Port, /internal (ApiDashboard), Root Route Swap
+**Date:** 2026-08-09  **Status:** Complete, build-verified, NOT yet browser-verified on a real
+mobile device (see Known Limitations) — everything else confirmed via `CI=true npx react-scripts
+build` after every change and, where noted, a live screenshot comparison against the HTML source.
+
+### Goal
+terra-hq-site's `terra_api_strategy.html` — a static, 1048-line, self-contained HTML file
+covering Terra API's own "what is this service" documentation (8 tabs: Overview, Core Services,
+Health & Isolation, Build Sequence, ADRs, Ecosystem (Public), Ecosystem Architecture, For
+Partners) — needed to become a real page inside this app, at `/internal` initially (later moved
+to `/`, see the last section below). The HTML file itself stays in terra-hq-site as a frozen
+local reference copy, not kept in hand-maintained sync going forward. Separately, the existing
+standalone `/internal` operator surface (`OperatorDashboard.js` — live ecosystem-health
+visualizer + service table, terra-api-adr-012) needed folding into this same page as a tab,
+rather than staying a second top-level route.
+
+This encompasses several genuinely distinct pieces of work, documented in the order they
+actually happened (including the mistakes, since the corrections are as instructive as the
+final state):
+
+1. Scaffold a new `/internal` route reusing the existing `OperatorRoute` auth gate.
+2. Migrate `OperatorDashboard.js` into a tab (`OperatorTab.js`) inside the new page, delete the
+   old standalone route.
+3. Port the HTML's animated circuit-board canvas backdrop (`HeartbeatBackdrop.js`) — code, not
+   just an image.
+4. **A full redo of steps 1-3's visual layer** — the first pass had drifted through this app's
+   existing shared CSS tokens instead of copying the HTML's actual values, and Will caught it.
+5. A chain of small, real bugs found only by Will actually looking at the rendered page: light-
+   mode tab-bar color, an opaque visualizer background, a washed-out dark-mode hero, a body
+   background bug that had nothing to do with the circuit canvas itself, a CSS specificity tie
+   silently losing to an unrelated stylesheet.
+6. UI additions with no HTML equivalent: a mobile/always-visible hamburger menu + drawer, a
+   logo placeholder, removing a badge.
+7. Moving the whole page from `/internal` to `/` — the app's new default landing route.
+
+---
+
+### 1-2. Scaffolding + folding OperatorDashboard in as a tab
+
+`OperatorRoute.js` already existed (role=internal + ops:read gate, terra-api-adr-012) and is
+generic — no changes needed to reuse it for a second page. `ApiDashboard.js` was created fresh
+with 8 tab IDs (`overview`, `core-services`, `health-isolation`, `build-sequence`, `adrs`,
+`ecosystem-public`, `ecosystem-architecture`, `for-partners`), each initially rendering a
+separate component file under `src/internal/api/`.
+
+Once Will confirmed both `/internal` (old OperatorDashboard) and the new page shared exactly one
+audience (role=internal), `OperatorDashboard.js`'s body (the ecosystem-health `EcosystemVisualizer`
++ `OperatorServiceTable`, plus its `forbidden`/403 handling and tier-accent `useEffect`) was
+lifted verbatim into a new `OperatorTab.js`, added as a 9th tab, and `OperatorDashboard.js`
+deleted along with its now-redundant route in `App.js`. `Dashboard.js`'s "OPERATOR" nav link and
+`OperatorRoute.js`'s own redirect target both already pointed at `/internal`, so nothing else
+needed updating for this step specifically.
+
+**Why a tab, not a second page:** matches this codebase's own established reasoning
+(`OperatorRoute`'s comment on why a route boundary beats a conditional-render boundary) — one
+coarse, auditable gate is easier to reason about than two.
+
+---
+
+### 3. Porting the circuit-board backdrop — code, not an image
+
+The HTML page's backdrop is NOT a CSS background-image. It's a `<canvas>` element driven by a
+~250-line inline `<script>`:
+- Procedurally generates a PCB-trace-style graph once per page load: several random-walk
+  "walkers" take axis-aligned steps on a 46px grid, occasionally branching, producing a
+  branching network of `nodes`/`segments` (not a uniform grid — deliberately organic-looking).
+- A real reference photo (`terra_api_circuit_board.png`, ~1.9MB) is tiled underneath the
+  procedural traces as a static backdrop, at low opacity in dark mode (0.16) and full opacity
+  in light mode (1.0) — the two modes intentionally look very different here, not just inverted.
+- On a slow "heartbeat" interval (2.4s), several random origin nodes fire a breadth-first
+  flash that propagates outward through connected segments over ~0.4s (each segment's ignite
+  time = its BFS hop distance × 0.05s), rendered as a brightness ease-out per segment — this is
+  the literal visual metaphor for "Terra API is the ecosystem's heartbeat/health monitor."
+  Clicking anywhere on the page also fires a flash at the nearest node.
+- Scrolling pans a "chip" 4x the viewport height at 35% of actual scroll speed (parallax) so the
+  backdrop reads as sitting behind the content rather than scrolling with it 1:1.
+
+This was ported into `HeartbeatBackdrop.js` (a React component wrapping the same canvas logic in
+a `useEffect` with proper `cancelAnimationFrame`/listener cleanup on unmount, since React
+components can unmount mid-animation in a way a static HTML page's script never has to handle)
+plus `heartbeat-backdrop.css` for the two CSS rules (`.heartbeat-backdrop`/`#heartbeatCanvas`)
+the original page had. The PNG was copied into `public/terra_api_circuit_board.png` (flat
+`public/`, matching this repo's existing convention — no `public/assets/` subfolder invented for
+this). Verified byte-identical via `md5sum` against the terra-hq-site copy after the fact, once
+a later bug (see below) raised the question of whether the wrong image was somehow being served.
+
+The component reads `--gold`/`--blue` via `getComputedStyle(document.documentElement)` and
+`document.documentElement.getAttribute('data-theme')`, exactly like the HTML script did — this
+worked immediately with zero extra wiring because `ThemeContext.js` already sets `data-theme` on
+`<html>` (not a wrapper div) specifically so the 3D visualizer's WebGL context — which cannot
+read CSS custom properties at all — has one shared, DOM-observable source of truth alongside
+everything CSS-driven. The same mechanism that already existed for the visualizer's benefit
+turned out to be exactly what an unrelated canvas-based backdrop needed too.
+
+---
+
+### 4. The full redo — copying the HTML's actual CSS, not this app's tokens
+
+**What went wrong the first time:** the initial `ApiDashboard.js`/`api-dashboard.css` pass built
+the 8 content tabs' visual layer by layering onto this app's EXISTING shared design tokens
+(`dashboard.css`'s `--surface`/`--surface2`/`--gold`/etc., `.cm-card` for every section) rather
+than using the HTML source's own CSS values. The class names were even renamed with an `api-`
+prefix (`.api-svc-card` instead of the HTML's `.svc-card`) specifically to avoid collisions with
+those shared tokens. This produced a page that was thematically similar — same color family,
+same rough layout — but visibly, measurably different: different card backgrounds, different
+spacing, different font sizes, because it was two independent design systems that happened to
+share a palette, not one system copied from the other.
+
+**Will's correction, verbatim:** *"can you just literaaly just copy and paste the html for
+terra api strategy html here because the pages you made look different"* and, more pointedly
+after the scope of the mismatch became clear: *"please it has to be identical!! copy and paste
+if need be."* This is the same category of error as an earlier, separate incident this session
+where a visualizer's zoom/scale values were sourced from an intermediate git commit message
+instead of the file's actual current state — the specific failure mode both times was
+*reconstructing* a value through reasoning/an existing system instead of *reading the actual
+current source and copying it*.
+
+**The fix:** read `terra_api_strategy.html` in full (all ~1048 lines — CSS block + every tab's
+markup + the canvas script), then rewrote `api-dashboard.css` as a near-verbatim copy of the
+HTML's `<style>` block (same class names — `.sh`, `.callout`, `.svc-card`, `.adr-card`,
+`.eco-hero`, etc. — no `api-` prefix invented), scoped under `.api-shell` as a parent selector
+(`.api-shell .callout { ... }`) purely to prevent bleeding into `Dashboard.js`/other pages, with
+every property value copied as-is rather than reconciled against `dashboard.css`'s tokens. Then
+rewrote all 7 non-Operator tab components' JSX to use that same markup/class structure and the
+HTML's actual copy text verbatim, rather than the earlier paraphrased/restructured versions.
+
+**One deliberate, explicitly-called-out exception:** the visualizer itself. The HTML embeds
+`terra_api_visualizer_phase5.html` via an `<iframe>` (a separate vanilla-JS Three.js build,
+unrelated to this app's React visualizer). Will's explicit instruction: *"only thing that
+doesn't need to move is the visualizer"* and later, after some background-related confusion,
+*"the oly part of visualizer that should identical to html version is background."* So
+`OverviewTab.js`'s hero visualizer slot uses this app's own live `EcosystemVisualizer` React
+component (same one `Dashboard.js`/`OperatorTab.js` already use) — NOT a ported iframe — with
+only its *background treatment* matched to the HTML's frosted/transparent look (see the
+`transparent` prop work below). Everything else about the HTML page (hero copy, stat cards, all
+tab content, nav structure) WAS a literal 1:1 port.
+
+**Real, load-bearing lesson from this correction, generalizable beyond this one page:** when a
+user says "make X match Y" and Y is a real, readable source file, the correct default is to
+open Y and copy its actual current bytes/values — not to infer what Y probably looks like from
+memory, from a similar existing pattern in the codebase, or from an intermediate state Y passed
+through in its history. Both of this session's real errors (the visualizer zoom/scale values,
+and this whole page's first draft) were caused by skipping that direct-read step in favor of a
+plausible-looking derivation. The fix in both cases was mechanically the same: re-read the
+actual source, copy it directly, and only THEN layer in the specific, explicitly-approved
+deviations (React lifecycle wiring, the visualizer-stays-live exception, later UI additions)
+on top of a verified-accurate base — never skip straight to the deviations.
+
+---
+
+### 5. Bugs found only by Will looking at the actual rendered page
+
+Every one of these was invisible from reading the CSS alone — each was only caught because Will
+looked at a real screenshot and said something was visually wrong, then a root cause had to be
+traced. Documented in the order found, since several of these initially looked like the same bug
+and turned out to be unrelated.
+
+**5a. Light-mode tab bar wrong shade of silver.** The HTML has TWO selectors sharing one
+light-mode background value: `[data-theme="light"] nav,[data-theme="light"] .tabs{background:
+rgba(201,206,212,0.95)}`. The port's `api-dashboard.css` only carried the light-mode override
+for the nav bar (`.nav-brand-bar`), not the tab bar (`.api-tabs`) right below it — a simple
+one-selector omission during the rewrite, invisible without an actual side-by-side look since
+both elements are dark and similar-looking without the override. `.api-tabs` fell back to
+`var(--surface)`, which is plain white in light mode, clashing visibly against the correctly-
+silver nav bar directly above it. Fixed by adding the missing selector.
+
+**5b. Visualizer showed as a solid opaque box, not the frosted circuit backdrop.** Root cause
+was TWO independent opacity sources, both needing separate fixes:
+  - `terraScene.js` (the Three.js scene builder shared by every `EcosystemVisualizer` usage
+    across the whole app) unconditionally set `scene.background = new THREE.Color(...)` — an
+    OPAQUE fill, even though the WebGL renderer was already constructed with `alpha: true`.
+    Setting an opaque `THREE.Color` on `scene.background` defeats renderer alpha entirely; the
+    canvas paints solid regardless of what CSS says is behind it.
+  - Independently, `visualizer.css`'s `.cm-visualizer` (the container div, not the canvas) also
+    painted its own opaque `background: var(--surface2, ...)`, plus a fixed `aspect-ratio`/
+    `min-height`/`max-height` designed for its normal use as a self-contained card — none of
+    which fit inside `.viz-frame`'s own frosted-panel sizing.
+
+  **The fix, done carefully to avoid a wider regression:** `EcosystemVisualizer` is shared by
+  `Dashboard.js` (customer page, explicitly out of scope/deferred this session) and
+  `OperatorTab.js` in addition to the new `OverviewTab.js` — a global change to `scene.background`
+  would have silently altered the customer dashboard's look too. Instead, `createScene(canvas,
+  options)` gained a new `{ transparent: boolean }` option, defaulting to `false` (every existing
+  caller's behavior is byte-for-byte unchanged unless it opts in). When `true`: `scene.background`
+  and `scene.fog` are both skipped entirely (fog needs an opaque background to read as depth
+  rather than a hazy vignette against a transparent canvas). `EcosystemVisualizer.js` threads a
+  new `transparent` prop down to `createScene`; `setTheme()` no-ops its background repaint when
+  `transparent` is set, since there's nothing to repaint. Only `OverviewTab.js` and (once the same
+  visual treatment was requested there too) `OperatorTab.js` pass `transparent`. The CSS side got
+  a scoped override, `.api-shell .viz-frame .cm-visualizer { background: none; aspect-ratio:
+  unset; ... }`, touching only visualizer instances that happen to sit inside a `.viz-frame`.
+
+**5c. That CSS override silently lost to `visualizer.css`'s own light-mode rule.** After 5b's fix
+was written, the Operator tab's visualizer STILL showed the old opaque light-gray box — but only
+in light mode; dark mode was fixed. Root cause: `visualizer.css` has its own
+`:root[data-theme='light'] .cm-visualizer { background: ... }` rule, which by CSS specificity
+math is a tie with the override (`.api-shell .viz-frame .cm-visualizer` = 3 plain classes =
+(0,3,0); `:root[data-theme='light'] .cm-visualizer` = `:root` pseudo-class + attribute selector
++ 1 class = also (0,3,0)). On an exact specificity tie, CSS falls back to source order — and
+which stylesheet's `<style>` tag landed later in the DOM depended on webpack's import/injection
+order between `api-dashboard.css` (imported by `ApiDashboard.js`) and `visualizer.css` (imported
+by `EcosystemVisualizer.js`), which isn't something this codebase pins or guarantees. **Fix:**
+doubled the class in the selector (`.viz-frame.viz-frame` — matches the exact same elements,
+since a class repeated in one compound selector doesn't change what it targets, only its
+specificity value, which becomes (0,4,0)) so the override reliably wins regardless of import
+order, instead of depending on an unguaranteed tie-break.
+
+**5d. Dark-mode hero looked "washed out"/flat gray instead of showing visible circuit detail.**
+This one took the longest to actually root-cause because the first two hypotheses were both
+wrong. Confirmed NOT the problem, in order: (1) the PNG file itself — `md5sum` confirmed
+byte-identical between terra-hq-site and this repo's `public/` copy; (2) the canvas draw
+code's opacity math — `HeartbeatBackdrop.js`'s dark-mode alpha values (0.14 line, 0.18 junction,
+0.16 board-image) were confirmed to match the HTML's literal numbers exactly, copied verbatim.
+Both were real, necessary things to check and rule out, not wasted effort — but neither was the
+actual bug.
+
+**Actual root cause, found by reasoning through what `HeartbeatBackdrop`'s canvas is compositing
+against:** the canvas is `position: fixed; z-index: -1` — it paints BEHIND EVERYTHING, including
+`<body>`. `.api-shell` (the page's root div) was deliberately set to `background: transparent` so
+the canvas would be visible through it — correct in isolation — but nothing was ever painting
+`<body>` itself with the HTML's `body{background:var(--bg)}` equivalent. CRA's own `index.css`
+sets no body background at all, so it defaulted to the browser's plain white. The canvas's
+already-faint, correctly-valued traces were compositing against white instead of the HTML's
+actual near-black (`#0a0c10`), reading as a flat, washed-out gray rather than "faint atmospheric
+backdrop" — which is exactly the flavor of visual difference "washed out" describes. **Light mode
+had looked correct THE WHOLE TIME, purely by coincidence** — the browser's default white
+happens to be close enough to the light theme's actual `--bg` (`#eff0f2`) that the bug was
+invisible there, which is part of why it took this long to trace: light mode gave no signal that
+anything was wrong.
+
+**Fix:** added an explicit `body { background: #0a0c10 }` / `:root[data-theme='light'] body {
+background: #eff0f2 }` rule to `api-dashboard.css`. **Known, accepted risk, documented inline in
+the CSS itself:** CRA/webpack injects a route's CSS on first import and never removes it on
+unmount — so this global `body` rule stays live even after navigating to `/login` or the
+customer dashboard, for the rest of that session, once `/internal`(now `/`) has been visited
+once. This is safe ONLY because every other route's own root element is opaque and covers the
+full `100vh` viewport (`Dashboard.js`'s `.command-matrix`, `Login.js`'s `.login-page`), fully
+masking `<body>` regardless of what color it is underneath. If a future page is ever added that
+doesn't fully cover the viewport, this rule would leak through as a visible wrong-colored edge —
+flagged in the CSS comment as something to remember if that's ever debugged later, since the
+connection back to this fix would not be obvious from that future bug report alone.
+
+  A separate, related tuning pass happened alongside these fixes: the hero's `padding`
+  (originally the HTML's literal `88px 40px 56px`) was cut to `40px 40px 28px` because this
+  React page has sticky nav+tabs chrome stacked above the hero that the static HTML page never
+  had to stack against in the same way — a literal port pushed the visualizer below the fold on
+  page load. Once the hero shrank, the SAME gradient/blur values the HTML uses (tuned for an
+  88px-tall hero) covered proportionally more of the now-smaller box, independently contributing
+  to the washed-out look — eased those values down too (`rgba(...,0.7)`→`0.55`,
+  `blur(5px)`→`blur(3px)`, etc.), explicitly logged in the CSS as tuning to compensate for a
+  size change already made, not a re-match against the HTML's literal numbers (which no longer
+  apply 1:1 once the box itself is a different size).
+
+---
+
+### 6. UI additions with no HTML source equivalent
+
+These are all deliberate DEVIATIONS from the "identical to the HTML" mandate, each requested
+directly by Will as new work, not corrections to the port:
+
+- **"FOUNDATION LAYER" nav badge removed entirely**, not replaced with anything — this app has
+  no equivalent live-status concept the HTML's Cloudflare-live badge was standing in for.
+- **Nav logo replaced with an honest placeholder.** The HTML's static "TERRA API" text wordmark
+  was swapped for a plain, deliberately-unstyled dashed-outline box reading "LOGO" — same
+  pattern already established by `Login.js`'s social-sign-in placeholder buttons (Terra-branded
+  shapes, explicitly never real Google/Apple logos): the placeholder should read as "not built
+  yet," not be mistaken for a real (if minimal) design choice. Will's own framing: he'll design
+  the real mark later, "probably another animation." Logged as TFE-602 in `TASKS.md` alongside
+  the still-default CRA React-logo favicon (`public/favicon.ico`/`logo192.png`/`logo512.png`),
+  same category of pending work, no code changes needed when the real assets exist — just
+  matching-filename replacement.
+- **Mobile hamburger + tab drawer**, built from scratch (the HTML just lets its 9 tabs
+  horizontally scroll below 768px via `overflow-x:auto`, no hamburger at all). Went through two
+  iterations based on direct feedback: v1 only rendered the button below the 768px breakpoint
+  (matching a literal "mobile menu" read of the request) — Will clarified he wanted it visible
+  and usable at ANY viewport width, so the CSS gating was removed and the drawer's visibility is
+  now controlled entirely by React state (`menuOpen`), not a media query. v2 initially placed
+  the button on the left of the nav (conventional hamburger position, ahead of the logo); Will
+  asked to flip sides with the sign-out button, so it now sits on the right, after theme-toggle
+  and sign-out. The drawer itself re-renders the exact same `TABS` array as the horizontal bar,
+  as `role="tablist"`/`role="tab"` buttons (not `role="menu"`/`"menuitem"`, which don't support
+  `aria-selected` per `jsx-a11y/role-supports-aria-props` — caught by lint, not by inspection).
+
+---
+
+### 7. Root route swap — `/` becomes the internal page, not the customer dashboard
+
+Final change of this session: Will's app is his own internal tool right now, not a live
+customer product, so the SPA's default landing route ("/") should open on the operator/API page,
+not an empty customer dashboard nobody's using yet.
+
+**The real hazard, caught before writing any code:** `OperatorRoute.js` redirects non-operators
+to a fallback path when `isOperator()` is false. That fallback was hardcoded to `"/"`. If `"/"`
+itself became the SAME gated route, a non-operator landing on `"/"` would be redirected back to
+`"/"` — an infinite redirect loop. Will confirmed the fix should be the "correct" one (swap the
+redirect target too) rather than the "it's just me using this for now" shortcut, even though the
+latter would have worked today with zero real users to break.
+
+**Changes:** `App.js` — `"/"` now renders `ApiDashboard` behind `OperatorRoute`; the customer
+`Dashboard` moved to a new `"/dashboard"` route behind the existing generic `ProtectedRoute`
+(unaffected by any of this, since it has no hardcoded destination assumptions of its own).
+`OperatorRoute.js` — its non-operator fallback changed from `<Navigate to="/" replace />` to
+`<Navigate to="/dashboard" replace />`. `Dashboard.js` — its "OPERATOR" nav link updated from
+the now-nonexistent `/internal` to `"/"`. `Login.js` — deliberately left UNCHANGED: its
+post-login fallback (`navigate(redirectTarget || '/')`, used only when no `?redirect=` query
+param is present) already lands on `"/"`, which is now correctly the internal page — this was
+already the desired behavior once the swap landed, not a separate bug to fix.
+
+---
+
+### Known Limitations / Next
+- **Not verified on a real mobile device or browser devtools' responsive mode.** Every mobile-
+  related claim in this entry (breakpoint coverage, drawer behavior, hamburger positioning) is
+  based on a careful line-by-line reading of the CSS, cross-checked against the HTML source's
+  own `@media` rules — NOT an actual rendered screenshot at a narrow viewport. No browser
+  automation tool was available in this session to verify visually. The 7 ported content tabs
+  carry the HTML's exact `@media (max-width: 768px)` rules verbatim, so those specifically
+  should be low-risk; the `.viz-frame` visualizer areas and the tab drawer are React-only
+  additions with no HTML mobile behavior to have copied, so they're comparatively less verified.
+- `/internal` as a URL no longer exists (moved to `/`) — worth checking whether anything outside
+  this repo (bookmarks, other services, documentation) still links to the old path.
+- TFE-602 (logo + favicon placeholders) stays open until Will's real designs exist.
+- Nothing in this session was committed or pushed — confirmed via `git log`/`git status -sb`
+  before this entry was written; nothing in this list should be read as already-live in any
+  deployed environment.

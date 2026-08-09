@@ -1,0 +1,550 @@
+/* Terra API internal surface — /internal. Copied VERBATIM from
+   terra-hq-site/terra_api_strategy.html's <style> block (2026-08-09) — Will's explicit
+   instruction after an earlier version, built from this app's shared dashboard.css/operator.css
+   tokens instead of the HTML's own values, drifted visibly from the source. Same lesson as the
+   visualizer port: copy the actual source, don't reconstruct through an existing system.
+
+   Scoped under .api-shell (all rules below prefixed with it) since these class names
+   (.callout, .sh, .adr-card, etc.) are generic enough that leaving them unscoped could bleed
+   into Dashboard.js or OperatorTab. Everything else — property values, selectors, comments —
+   is copied as-is from the HTML source. Do not "clean up" or reconcile with dashboard.css's
+   tokens; if the source file changes, re-copy from there. */
+
+.api-shell {
+  --bg: #0a0c10;
+  --surface: #111318;
+  --surface2: rgba(24, 28, 36, 0.80);
+  --surface3: #1e2330;
+  --gold: #c9a84c;
+  --gold-dim: #8a6f30;
+  --teal: #2dd4bf;
+  --green: #4ade80;
+  --blue: #60a5fa;
+  --red: #f87171;
+  --amber: #fbbf24;
+  --purple: #a78bfa;
+  --orange: #fb923c;
+  --api: #c9a84c;
+  --api-dim: rgba(201, 168, 76, 0.08);
+  --api-border: rgba(201, 168, 76, 0.22);
+  --text: #e8e4dc;
+  --text-dim: #7a7570;
+  --text-muted: #4a4744;
+  --border: rgba(201, 168, 76, 0.18);
+  --border-sub: rgba(255, 255, 255, 0.06);
+  /* .api-shell itself stays transparent — the actual --bg fill lives on html/body below, since
+     HeartbeatBackdrop's canvas is position:fixed at z-index:-1 (paints behind EVERYTHING,
+     including body). Making .api-shell transparent without giving body its own dark fill left
+     the canvas compositing against the browser's default white (CRA's index.css sets no body
+     background), which read as a washed-out light-gray page in dark mode instead of the HTML's
+     near-black — light mode looked correct only by coincidence, since body's white happens to
+     be close to the light theme's --bg (#eff0f2). Fixed 2026-08-09. */
+  background: transparent;
+  color: var(--text);
+  font-family: 'JetBrains Mono', monospace;
+  min-height: 100vh;
+  font-size: 18px;
+}
+
+/* body gets the actual --bg fill — see the comment above for why. This is a global `body`
+   selector in a stylesheet React never "unloads": CRA/webpack injects a route's CSS on first
+   import and leaves it in the page after navigating away (no unmount-time cleanup), so this
+   rule stays live even on /, /login, etc. once /internal has been visited once in a session.
+   Safe in practice ONLY because every other route's own root element is opaque and covers the
+   full viewport (Dashboard.js's .command-matrix, Login.js's .login-page both set their own
+   background + min-height:100vh), fully masking body regardless of what's under them. If a
+   future page ever has visible letterboxing/doesn't cover 100vh, this rule would leak through
+   as a wrong-colored edge — worth remembering if that ever gets debugged. */
+body {
+  background: #0a0c10;
+}
+
+:root[data-theme='light'] body {
+  background: #eff0f2;
+}
+
+:root[data-theme='light'] .api-shell {
+  --bg: #eff0f2;
+  --surface: #ffffff;
+  --surface2: rgba(201, 206, 212, 0.80);
+  --surface3: #b7bec7;
+  --gold: #a3660a;
+  --api: #a3660a;
+  --api-dim: rgba(163, 102, 10, 0.07);
+  --api-border: rgba(163, 102, 10, 0.22);
+  --text: #0d0b09;
+  --text-dim: #2e2a26;
+  --text-muted: #524d48;
+  --border: rgba(163, 102, 10, 0.2);
+  --border-sub: rgba(0, 0, 0, 0.07);
+}
+
+/* ─── Nav bar — the HTML's bare <nav>/.nav-brand/.nav-right/.theme-toggle, adapted here to
+   this app's auth/theme controls instead of the static page's link + Cloudflare badge. Values
+   (padding, height, colors) copied verbatim from the HTML's own nav rule. ─── */
+
+.api-shell .nav-brand-bar {
+  position: sticky;
+  top: 0;
+  z-index: 200;
+  background: rgba(10, 12, 16, 0.95);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 40px;
+  height: 56px;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+:root[data-theme='light'] .api-shell .nav-brand-bar { background: rgba(201, 206, 212, 0.95); }
+
+.api-shell .nav-brand {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 21.6px;
+  font-weight: 600;
+  color: var(--gold);
+  letter-spacing: 0.3em;
+}
+
+/* Placeholder logo mark (2026-08-09) — see ApiDashboard.js's comment above the span for why
+   this is deliberately plain/unstyled rather than a polished wordmark. Dashed outline reads as
+   "slot reserved," not as a finished design choice; replace this whole rule (or delete it) once
+   the real logo/animation lands. */
+.api-shell .nav-brand-placeholder {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  font-weight: 400;
+  letter-spacing: 0.2em;
+  color: var(--text-dim);
+  border: 1px dashed var(--border-sub);
+  border-radius: 3px;
+  padding: 4px 10px;
+}
+
+.api-shell .nav-left { display: flex; align-items: center; gap: 14px; }
+.api-shell .nav-right { display: flex; align-items: center; gap: 16px; }
+
+.api-shell .theme-toggle {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 15.6px;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  line-height: 1;
+  flex-shrink: 0;
+  color: var(--text);
+}
+
+.api-shell .theme-toggle:hover { border-color: var(--gold); }
+.api-shell .theme-icon { color: #f5c518; }
+:root[data-theme='light'] .api-shell .theme-toggle { background: #0a0c10; border-color: #0a0c10; }
+
+/* nav-signout is React-only (no HTML equivalent) — same circular affordance as theme-toggle,
+   just a different glyph/action, so it reads as part of the same control cluster. */
+.api-shell .nav-signout { font-size: 12px; }
+
+@media (max-width: 768px) {
+  .api-shell .nav-brand-bar { padding: 0 16px; height: 48px; }
+}
+
+/* ─── Tab bar — the HTML's .tabs/.tab, standing in for this app's api-tabs/api-tab ────── */
+
+.api-shell .api-tabs {
+  display: flex;
+  flex-wrap: nowrap;
+  border-bottom: 1px solid var(--border);
+  padding: 0 40px;
+  background: var(--surface);
+  position: sticky;
+  top: 56px;
+  z-index: 100;
+  overflow-x: auto;
+  scrollbar-width: none;
+  margin-bottom: 0;
+}
+
+/* HTML source: [data-theme="light"] nav,[data-theme="light"] .tabs{background:rgba(201,206,212,
+   0.95)} — same silver as the nav bar. Missing here previously, which left the tab bar on
+   --surface's plain white instead, clashing against the nav bar right above it. */
+:root[data-theme='light'] .api-shell .api-tabs { background: rgba(201, 206, 212, 0.95); }
+
+@media (max-width: 768px) {
+  .api-shell .api-tabs { top: 48px; }
+}
+
+/* ─── Tab drawer — opened via .nav-menu-toggle, at any viewport width (2026-08-09, Will's
+   call — not gated to mobile). No CSS display:none/media-query gating: presence in the DOM is
+   controlled entirely by React state (menuOpen in ApiDashboard.js), so it works identically
+   whether the horizontal .api-tabs bar above is also visible (desktop) or not. Styled to match
+   the same frosted/silver language as everything else on this page. ─── */
+
+.api-shell .api-tab-drawer {
+  display: flex;
+  flex-direction: column;
+  position: sticky;
+  top: 56px;
+  z-index: 100;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  max-height: calc(100vh - 56px);
+  overflow-y: auto;
+}
+
+:root[data-theme='light'] .api-shell .api-tab-drawer { background: rgba(201, 206, 212, 0.95); }
+
+@media (max-width: 768px) {
+  .api-shell .api-tab-drawer { top: 48px; max-height: calc(100vh - 48px); }
+}
+
+.api-shell .api-tab-drawer-item {
+  padding: 14px 20px;
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  text-align: left;
+  color: var(--text-dim);
+  cursor: pointer;
+  border: none;
+  border-bottom: 1px solid var(--border-sub);
+  background: none;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.api-shell .api-tab-drawer-item:last-child { border-bottom: none; }
+.api-shell .api-tab-drawer-item:hover { color: var(--api); }
+.api-shell .api-tab-drawer-item-active { color: var(--api); background: var(--gold-glow, rgba(201, 168, 76, 0.08)); }
+
+.api-shell .api-tabs::-webkit-scrollbar { display: none; }
+
+.api-shell .api-tab {
+  padding: 16px 22px;
+  font-size: 10.8px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  cursor: pointer;
+  border: none;
+  border-bottom: 2px solid transparent;
+  background: none;
+  transition: all 0.2s;
+  white-space: nowrap;
+  flex-shrink: 0;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.api-shell .api-tab:hover { color: var(--api); }
+.api-shell .api-tab-active { color: var(--api); border-bottom-color: var(--api); }
+
+.api-shell .api-content {
+  padding: 68px 40px 116px;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+/* ─── Hero (Overview tab) ──────────────────────────────────────────── */
+
+.api-shell .api-hero {
+  text-align: center;
+  margin: -68px -40px 52px;
+  /* Vertical padding cut from the HTML's 88px/56px (2026-08-09, Will's explicit call) — this
+     page has sticky nav+tabs chrome above the hero that the static HTML page doesn't stack in
+     the same way, so a literal 1:1 port pushed the visualizer below the fold on load. A
+     deliberate deviation from exact parity, not a bug fix — horizontal padding/everything else
+     unchanged. */
+  padding: 40px 40px 28px;
+  position: relative;
+  overflow: hidden;
+  /* Gradient stops + blur eased from the HTML's 0.7/0.4/blur(5px) (2026-08-09) — those values
+     were tuned against an 88px-padding hero; the shorter hero above means the same ellipse
+     percentage now covers proportionally more of the box, so the original opacities read as a
+     flat gray wash instead of "circuit visible, fading toward the text." Tuning to compensate
+     for the size change I already made, not re-matching the HTML's literal numbers. */
+  background: radial-gradient(ellipse 60% 100% at 50% 40%, rgba(10, 12, 16, 0.55) 0%, rgba(10, 12, 16, 0.25) 45%, transparent 80%);
+  backdrop-filter: blur(3px);
+  box-shadow: inset 0 -50px 60px -40px rgba(10, 12, 16, 0.9);
+}
+
+:root[data-theme='light'] .api-shell .api-hero {
+  background: radial-gradient(ellipse 60% 100% at 50% 40%, rgba(241, 242, 243, 0.68) 0%, rgba(241, 242, 243, 0.32) 45%, transparent 80%);
+  backdrop-filter: blur(2.5px);
+  box-shadow: inset 0 -50px 60px -40px rgba(241, 242, 243, 0.85);
+}
+
+.api-shell .api-hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse 70% 50% at 50% 0%, rgba(251, 191, 36, 0.08) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.api-shell .api-logo {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 64.8px;
+  font-weight: 300;
+  letter-spacing: 0.4em;
+  color: var(--api);
+  margin-bottom: 6px;
+  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.5);
+}
+
+:root[data-theme='light'] .api-shell .api-logo { text-shadow: none; }
+
+.api-shell .api-sub {
+  font-size: 10.8px;
+  color: var(--text-dim);
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  margin-bottom: 24px;
+}
+
+.api-shell .hero-pills { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+
+.api-shell .hpill {
+  font-size: 10.8px;
+  padding: 4px 12px;
+  border-radius: 2px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  backdrop-filter: blur(4px);
+  border: none;
+}
+
+.api-shell .hp-a { background: rgba(20, 16, 4, 0.72); box-shadow: 0 0 14px 1px rgba(251, 191, 36, 0.22), inset 0 0 0 1px rgba(251, 191, 36, 0.15); color: var(--amber); }
+.api-shell .hp-b { background: rgba(6, 20, 10, 0.72); box-shadow: 0 0 14px 1px rgba(74, 222, 128, 0.22), inset 0 0 0 1px rgba(74, 222, 128, 0.15); color: var(--green); }
+.api-shell .hp-c { background: rgba(6, 14, 24, 0.72); box-shadow: 0 0 14px 1px rgba(96, 165, 250, 0.22), inset 0 0 0 1px rgba(96, 165, 250, 0.15); color: var(--blue); }
+:root[data-theme='light'] .api-shell .hp-a { background: rgba(251, 191, 36, 0.18); box-shadow: 0 0 10px 1px rgba(251, 191, 36, 0.12), inset 0 0 0 1px rgba(251, 191, 36, 0.2); }
+:root[data-theme='light'] .api-shell .hp-b { background: rgba(74, 222, 128, 0.18); box-shadow: 0 0 10px 1px rgba(74, 222, 128, 0.12), inset 0 0 0 1px rgba(74, 222, 128, 0.2); }
+:root[data-theme='light'] .api-shell .hp-c { background: rgba(96, 165, 250, 0.18); box-shadow: 0 0 10px 1px rgba(96, 165, 250, 0.12), inset 0 0 0 1px rgba(96, 165, 250, 0.2); }
+
+/* ─── Visualizer frame — kept, since the Operator tab's live React visualizer stays as-is;
+   this wrapper class is reused verbatim in case the Overview tab still wants the frosted-glass
+   frame look around any embedded content. ─── */
+
+/* EcosystemVisualizer (.cm-visualizer, visualizer.css) is normally a self-contained card: own
+   opaque background, own aspect-ratio/min/max-height, own border-radius. Inside .viz-frame it
+   needs to be none of those things — just a canvas filling the frame so the frosted panel
+   behind it (and the circuit backdrop behind THAT) is what's actually visible, matching the
+   HTML's transparent iframe embed. Scoped to .viz-frame only; every other EcosystemVisualizer
+   usage (Dashboard.js) keeps visualizer.css's normal card look untouched.
+
+   Doubled selector (.viz-frame.viz-frame) rather than a single .api-shell .viz-frame
+   .cm-visualizer — visualizer.css's own light-mode override,
+   `:root[data-theme='light'] .cm-visualizer`, has the same (0,3,0) specificity as a 3-class
+   chain, and which one wins on a tie depends on import/injection order between
+   api-dashboard.css and visualizer.css, which isn't guaranteed. Repeating a class doesn't
+   change what it matches, only its specificity (0,4,0), so this reliably wins regardless of
+   import order instead of depending on it. */
+.api-shell .viz-frame.viz-frame .cm-visualizer {
+  background: none;
+  aspect-ratio: unset;
+  min-height: 0;
+  max-height: none;
+  border-radius: 0;
+  width: 100%;
+  height: 100%;
+}
+
+:root[data-theme='light'] .api-shell .viz-frame.viz-frame .cm-visualizer {
+  background: none;
+}
+
+.api-shell .viz-frame {
+  background: radial-gradient(ellipse 90% 90% at 50% 45%, rgba(24, 28, 36, 0.55) 0%, rgba(24, 28, 36, 0.4) 70%, rgba(24, 28, 36, 0.25) 100%);
+  backdrop-filter: blur(6px);
+  box-shadow: inset 0 0 40px 10px rgba(10, 12, 16, 0.35), 0 0 0 1px var(--border-sub);
+}
+
+:root[data-theme='light'] .api-shell .viz-frame {
+  background: radial-gradient(ellipse 90% 90% at 50% 45%, rgba(201, 206, 212, 0.55) 0%, rgba(201, 206, 212, 0.4) 70%, rgba(201, 206, 212, 0.25) 100%);
+  backdrop-filter: blur(5px);
+  box-shadow: inset 0 0 40px 10px rgba(201, 206, 212, 0.35), 0 0 0 1px var(--border-sub);
+}
+
+/* ─── Section headers (.sh) ────────────────────────────────────────── */
+
+.api-shell .sh { display: flex; align-items: baseline; gap: 14px; margin-bottom: 26px; }
+
+.api-shell .sh-title,
+.api-shell .sh-note,
+.api-shell .sh-index,
+.api-shell .callout,
+.api-shell .scard,
+.api-shell .svc-card,
+.api-shell .data-table td,
+.api-shell .hf-desc,
+.api-shell .build-row,
+.api-shell .adr-card,
+.api-shell .eco-hero,
+.api-shell .eco-card,
+.api-shell .eco-principle,
+.api-shell .eco-timeline {
+  backdrop-filter: blur(4px);
+}
+
+.api-shell .sh-title { font-size: 10.8px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--api); background: var(--surface2); padding: 4px 10px; border-radius: 2px; }
+.api-shell .sh-line { flex: 1; height: 1px; background: var(--border-sub); }
+.api-shell .sh-note { font-size: 9.6px; color: var(--text-muted); letter-spacing: 0.08em; background: var(--surface2); padding: 3px 8px; border-radius: 2px; }
+.api-shell .sh-index { display: inline-flex; align-items: center; justify-content: center; min-width: 22px; height: 22px; padding: 0 6px; font-size: 10.2px; letter-spacing: 0.08em; color: var(--api); border: 1px solid var(--api-border); border-radius: 3px; flex-shrink: 0; background: var(--surface2); }
+.api-shell .block { margin-bottom: 52px; }
+
+/* ─── Callouts ──────────────────────────────────────────────────────── */
+
+.api-shell .callout { background: var(--surface2); border: 1px solid var(--border-sub); border-left: 2px solid var(--api); border-radius: 0 4px 4px 0; padding: 21px 28px; font-size: 10.8px; color: var(--text-dim); line-height: 1.9; margin-bottom: 20px; }
+.api-shell .callout strong { color: var(--text); }
+.api-shell .callout.gold { border-left-color: var(--gold); }
+.api-shell .callout.green { border-left-color: var(--green); }
+.api-shell .callout.red { border-left-color: var(--red); }
+.api-shell .callout.blue { border-left-color: var(--blue); }
+.api-shell .callout.purple { border-left-color: var(--purple); }
+.api-shell .callout.teal { border-left-color: var(--teal); }
+
+/* ─── Stat strip ────────────────────────────────────────────────────── */
+
+.api-shell .stat-strip { display: grid; grid-template-columns: repeat(4, 1fr); gap: 13px; margin-bottom: 46px; }
+.api-shell .scard { background: var(--surface2); border: 1px solid var(--border-sub); border-radius: 4px; padding: 21px; text-align: center; }
+.api-shell .sval { font-family: 'Cormorant Garamond', serif; font-size: 33.6px; color: var(--api); }
+.api-shell .slabel { font-size: 10.8px; color: var(--text-dim); letter-spacing: 0.12em; text-transform: uppercase; margin-top: 4px; }
+
+/* ─── Core Services grid ───────────────────────────────────────────── */
+
+.api-shell .svc-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 36px; }
+.api-shell .svc-card { background: var(--surface2); border: 1px solid var(--border-sub); border-radius: 4px; padding: 26px; transition: border-color 0.2s; }
+.api-shell .svc-card:hover { border-color: var(--api-border); }
+.api-shell .svc-label { font-size: 10.8px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--api); margin-bottom: 8px; }
+.api-shell .svc-title { font-family: 'Cormorant Garamond', serif; font-size: 24px; font-weight: 300; color: var(--text); margin-bottom: 10px; letter-spacing: 0.08em; }
+.api-shell .svc-desc { font-size: 10.2px; color: var(--text-dim); line-height: 1.8; }
+.api-shell .svc-principle { font-size: 9.6px; color: var(--text-muted); border-top: 1px solid var(--border-sub); margin-top: 10px; padding-top: 10px; line-height: 1.7; }
+.api-shell .svc-principle strong { color: var(--text-dim); }
+
+/* ─── Data tables ───────────────────────────────────────────────────── */
+
+.api-shell .data-table { width: 100%; border-collapse: separate; border-spacing: 1px; background: var(--border-sub); border-radius: 4px; overflow: hidden; margin-bottom: 28px; }
+.api-shell .data-table th { background: var(--surface); padding: 10px 14px; font-size: 9.6px; color: var(--text-dim); letter-spacing: 0.1em; font-weight: 400; text-align: left; }
+.api-shell .data-table td { background: var(--surface2); padding: 11px 14px; font-size: 10.2px; color: var(--text-dim); line-height: 1.6; vertical-align: top; }
+.api-shell .data-table tr:hover td { background: var(--surface3); }
+
+/* ─── Health & Isolation ────────────────────────────────────────────── */
+
+.api-shell .health-flow { display: flex; flex-direction: column; gap: 0; margin-bottom: 28px; }
+.api-shell .hf-row { display: grid; grid-template-columns: 140px 1fr; gap: 1px; background: var(--border-sub); margin-bottom: 1px; border-radius: 0; }
+.api-shell .hf-row:first-child { border-radius: 4px 4px 0 0; }
+.api-shell .hf-row:last-child { border-radius: 0 0 4px 4px; }
+.api-shell .hf-state { background: var(--surface); padding: 14px 16px; font-size: 9.6px; letter-spacing: 0.1em; text-transform: uppercase; display: flex; align-items: center; }
+.api-shell .hf-desc { background: var(--surface2); padding: 14px 16px; font-size: 10.2px; color: var(--text-dim); line-height: 1.8; }
+
+/* ─── Build Sequence ────────────────────────────────────────────────── */
+
+.api-shell .build-row { display: flex; gap: 26px; align-items: flex-start; padding: 26px 24px; border-bottom: 1px solid var(--border-sub); background: var(--surface2); }
+.api-shell .build-row:first-child { border-radius: 4px 4px 0 0; }
+.api-shell .build-row:last-child { border-bottom: none; border-radius: 0 0 4px 4px; }
+.api-shell .br-num { font-family: 'Cormorant Garamond', serif; font-size: 57.6px; color: var(--api); flex-shrink: 0; width: 52px; text-align: center; line-height: 1; }
+.api-shell .br-body { flex: 1; }
+.api-shell .br-title { font-size: 14.4px; color: var(--text); letter-spacing: 0.1em; margin-bottom: 8px; }
+.api-shell .br-desc { font-size: 10.2px; color: var(--text-dim); line-height: 1.85; }
+.api-shell .br-tag { flex-shrink: 0; }
+
+/* ─── ADRs ──────────────────────────────────────────────────────────── */
+
+.api-shell .adr-list { display: flex; flex-direction: column; gap: 13px; margin-bottom: 36px; }
+.api-shell .adr-card { background: var(--surface2); border: 1px solid var(--border-sub); border-radius: 4px; padding: 23px 26px; display: grid; grid-template-columns: 72px 1fr auto; gap: 18px; align-items: start; }
+.api-shell .adr-id { font-family: 'Cormorant Garamond', serif; font-size: 33.6px; color: var(--api); line-height: 1; }
+.api-shell .adr-title { font-size: 14.4px; color: var(--text); letter-spacing: 0.08em; margin-bottom: 6px; }
+.api-shell .adr-desc { font-size: 10.2px; color: var(--text-dim); line-height: 1.8; }
+.api-shell .adr-desc code { font-family: 'JetBrains Mono', monospace; background: rgba(255, 255, 255, 0.06); padding: 1px 5px; border-radius: 2px; font-size: 10px; }
+
+.api-shell .badge { font-size: 8.4px; padding: 3px 8px; border-radius: 2px; letter-spacing: 0.08em; display: inline-block; white-space: nowrap; }
+.api-shell .b-p1 { background: rgba(74, 222, 128, 0.08); color: var(--green); border: 1px solid rgba(74, 222, 128, 0.2); }
+.api-shell .b-p2 { background: rgba(96, 165, 250, 0.08); color: var(--blue); border: 1px solid rgba(96, 165, 250, 0.2); }
+.api-shell .b-p3 { background: rgba(167, 139, 250, 0.08); color: var(--purple); border: 1px solid rgba(167, 139, 250, 0.2); }
+.api-shell .b-all { background: rgba(251, 191, 36, 0.08); color: var(--amber); border: 1px solid rgba(251, 191, 36, 0.2); }
+
+/* ─── Ecosystem tabs (Ecosystem / Ecosystem Architecture / For Partners) ──────────────── */
+
+.api-shell .eco-hero { text-align: center; margin: -68px -40px 52px; padding: 88px 40px 56px; position: relative; overflow: hidden; background: var(--surface2); border-bottom: 1px solid var(--border-sub); }
+.api-shell .eco-hero::before { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse 70% 50% at 50% 0%, rgba(201, 168, 76, 0.05) 0%, transparent 70%); pointer-events: none; }
+.api-shell .eco-hero-title { font-family: 'Cormorant Garamond', serif; font-size: 57.6px; font-weight: 300; letter-spacing: 0.4em; color: var(--api); margin-bottom: 6px; }
+.api-shell .eco-hero-sub { font-size: 12.6px; color: var(--text-dim); letter-spacing: 0.2em; text-transform: uppercase; margin-bottom: 24px; }
+.api-shell .eco-hero-desc { font-size: 10.8px; color: var(--text-dim); line-height: 1.8; max-width: 700px; margin: 0 auto 28px; }
+.api-shell .eco-pills { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+.api-shell .eco-pill { font-size: 9.6px; padding: 4px 12px; border-radius: 2px; letter-spacing: 0.1em; text-transform: uppercase; background: var(--api-dim); border: 1px solid var(--api-border); color: var(--api); }
+.api-shell .eco-grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-bottom: 36px; }
+.api-shell .eco-grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 36px; }
+.api-shell .eco-card { background: var(--surface2); border: 1px solid var(--border-sub); border-radius: 4px; padding: 26px; transition: border-color 0.2s; }
+.api-shell .eco-card:hover { border-color: var(--api-border); }
+.api-shell .eco-card-title { font-family: 'Cormorant Garamond', serif; font-size: 20px; font-weight: 300; color: var(--text); margin-bottom: 10px; letter-spacing: 0.08em; }
+.api-shell .eco-card-desc { font-size: 10.2px; color: var(--text-dim); line-height: 1.8; }
+.api-shell .eco-principles { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-bottom: 36px; }
+.api-shell .eco-principle { background: var(--surface2); border: 1px solid var(--border-sub); border-radius: 4px; padding: 21px; display: flex; gap: 12px; }
+.api-shell .eco-principle-icon { font-size: 18px; flex-shrink: 0; }
+.api-shell .eco-principle-title { font-size: 10.8px; font-weight: 500; color: var(--api); letter-spacing: 0.08em; margin-bottom: 4px; }
+.api-shell .eco-principle-desc { font-size: 9.6px; color: var(--text-dim); line-height: 1.7; }
+.api-shell .eco-timeline { display: flex; flex-direction: column; gap: 0; margin-bottom: 20px; background: var(--surface2); border-radius: 4px; padding: 4px 20px; }
+.api-shell .eco-timeline-item { display: grid; grid-template-columns: 130px 1fr; gap: 18px; padding: 20px 0; border-bottom: 1px solid var(--border-sub); }
+.api-shell .eco-timeline-item:last-child { border-bottom: none; }
+.api-shell .eco-timeline-phase { font-size: 10.2px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--api); font-weight: 500; }
+.api-shell .eco-timeline-desc { font-size: 10.2px; color: var(--text-dim); line-height: 1.8; }
+
+@media (max-width: 768px) {
+  .api-shell .eco-grid-2, .api-shell .eco-grid-3, .api-shell .eco-principles { grid-template-columns: 1fr; }
+  .api-shell .eco-hero-title { font-size: 36px; }
+}
+
+@media (max-width: 768px) {
+  .api-shell .api-tabs { padding: 0 0 0 12px; }
+  .api-shell .api-content { padding: 40px 16px 76px; }
+  .api-shell .stat-strip { grid-template-columns: repeat(2, 1fr); }
+  .api-shell .svc-grid { grid-template-columns: 1fr; }
+  .api-shell .api-logo { font-size: 43.2px; letter-spacing: 0.25em; }
+  .api-shell .adr-card { grid-template-columns: 60px 1fr; gap: 10px; }
+  .api-shell .build-row { flex-direction: column; gap: 10px; }
+  .api-shell .hf-row { grid-template-columns: 1fr; }
+}
+
+/* ─── Operator tab — kept from the pre-port version, this content has no HTML source
+   equivalent (it's the merged /internal ecosystem-health view, React-only). OperatorTab's two
+   sections use dashboard.css's .cm-card (not this file's .block/.callout system) since that
+   content was never part of terra_api_strategy.html — cm-grid's flex/gap isn't wrapping them
+   anymore now that .api-content isn't cm-grid, so replicate the same spacing rhythm as .block
+   directly here. ─── */
+
+.api-shell .api-content > .cm-card {
+  margin-bottom: 40px;
+  /* Frosted, not dashboard.css's plain opaque var(--surface) — matches every other card on
+     this page (.callout/.svc-card/.adr-card/etc. all use --surface2 + blur, see the header
+     comment). Without this the Operator tab's two cm-card sections stood out as solid white
+     boxes against the circuit backdrop everything else on this page shows through. */
+  background: var(--surface2);
+  backdrop-filter: blur(4px);
+}
+
+.api-shell .op-denied {
+  text-align: center;
+  padding: 80px 20px;
+}
+
+.api-shell .op-denied-title {
+  display: block;
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 22px;
+  color: var(--red);
+  letter-spacing: 0.1em;
+  margin-bottom: 12px;
+}
+
+.api-shell .op-denied-note {
+  max-width: 480px;
+  margin: 0 auto 24px;
+  font-size: 11px;
+  line-height: 1.8;
+  color: var(--text-dim);
+}
