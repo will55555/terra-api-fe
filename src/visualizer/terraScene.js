@@ -501,9 +501,9 @@ export function createScene(canvas, options = {}) {
     // not pink (confirmed live by Will). Fixed here where connection state actually changes at
     // runtime, not just at creation.
     if (mesh.userData.config.isAnchor) {
-      mesh.material.color.setHex(isConnected ? 0xffffff : 0xaa8899);
+      mesh.material.color.setHex(isConnected ? 0xffffff : 0xff3333);
       if (mesh.userData.baseMaterial) {
-        mesh.userData.baseMaterial.color.setHex(isConnected ? 0xffffff : 0xaa8899);
+        mesh.userData.baseMaterial.color.setHex(isConnected ? 0xffffff : 0xff3333);
       }
     }
 
