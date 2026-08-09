@@ -1,0 +1,15 @@
+/* Ported verbatim from terra-hq-site/terra_api_strategy.html — see HeartbeatBackdrop.js for
+   the animation logic these two rules host. */
+.heartbeat-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+#heartbeatCanvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+}

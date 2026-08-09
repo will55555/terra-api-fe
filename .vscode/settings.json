@@ -1,0 +1,6 @@
+{
+    "sonarlint.connectedMode.project": {
+        "connectionId": "terra",
+        "projectKey": "will55555_terra-api-fe"
+    }
+}

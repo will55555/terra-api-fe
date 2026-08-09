@@ -17,7 +17,7 @@ import './visualizer.css';
 // updates, tear it down completely. Rendering lives in terraScene.js and fetching in
 // useEcosystemHealth, which keeps the scene testable without React and the hook testable
 // without WebGL.
-export default function EcosystemVisualizer({ statusByServiceId = {}, error = null }) {
+export default function EcosystemVisualizer({ statusByServiceId = {}, error = null, transparent = false }) {
   const canvasRef = useRef(null);
   const labelRef = useRef(null);
   const sceneRef = useRef(null);
@@ -25,12 +25,14 @@ export default function EcosystemVisualizer({ statusByServiceId = {}, error = nu
 
   // Empty dependency array is deliberate: rebuilding a WebGL context on every health poll or
   // theme flip would be catastrophic. Both flow through their own effects, mutating the live
-  // scene instead.
+  // scene instead. `transparent` is read once here too (not a dependency) — it's a per-mount
+  // layout choice (is this canvas sitting on a frosted panel or a plain card), never expected
+  // to flip on a live instance.
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return undefined;
 
-    const scene = createScene(canvas);
+    const scene = createScene(canvas, { transparent });
     sceneRef.current = scene;
     scene.setHoverLabelElement(labelRef.current);
 
@@ -54,6 +56,8 @@ export default function EcosystemVisualizer({ statusByServiceId = {}, error = nu
       scene.dispose();
       sceneRef.current = null;
     };
+    // transparent intentionally excluded — see the comment above the effect.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {

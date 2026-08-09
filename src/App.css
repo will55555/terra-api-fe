@@ -28,6 +28,9 @@
   color: #61dafb;
 }
 
+/* .login-* classes moved to pages/login.css 2026-08-09 — brought onto the shared design
+   system instead of this file's generic CRA-boilerplate styling. */
+
 @keyframes App-logo-spin {
   from {
     transform: rotate(0deg);

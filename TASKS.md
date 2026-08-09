@@ -1,91 +1,60 @@
 # terra-api-fe Tasks
 <!-- Repo-local task tracker. IDs referenced from HUB_STATE.md -> terra-api-fe (prefix: TFE). -->
-<!-- Phase numbers below match terra-api-adr-009's "Build Sequence" section (added 2026-07-24). -->
 
-- [x] TFE-001 - Confirm frontend deploy architecture: standalone repo (own GitHub remote
-      `will55555/terra-api-fe`), NOT the originally-floated monorepo-subdirectory-of-terra-api
-      plan. Dual-remote confirmed 2026-07-24 - `bitbucket` (`terra-inc-dev/terra-api-fe`) added
-      locally, matching terra-api's pattern.
-- [x] TFE-002 - Push local `main` to `bitbucket` remote to resync the mirror. DONE 2026-07-24 -
-      `bitbucket/main` now at `41c5ebd`, matches `origin/main`.
-- [x] TFE-003 - Adopt terra-api's phase-branch workflow (Will confirmed 2026-07-24): one branch
-      per phase, pre-PR branch + SonarQube cleanup before merging to `main`, original phase
-      branch kept untouched with full history.
+## Active
+- [x] TFE-001 — Confirm frontend deploy architecture: standalone repo, not a subdirectory of terra-api. Dual-remote confirmed with Bitbucket mirror matching terra-api's pattern.
+- [x] TFE-002 — Resync the Bitbucket mirror for terra-api-fe so the mirror stays aligned with the GitHub main branch.
+- [x] TFE-003 — Adopt the phase-branch workflow used by terra-api: one branch per phase, with pre-PR cleanup before merging to main.
 
-## Phase 1 - Auth Shell (branch `phase-1-auth-shell`, cut 2026-07-24)
-- [x] TFE-101 - Login flow + JWT bearer storage/attach against terra-api's existing auth
-      endpoints (terra-api-adr-003, already live). Done 2026-08-01 — see DEV_LOG.md.
-- [x] TFE-102 - Protected-route shell (redirect unauthenticated users to login). Done 2026-08-01.
-- [x] TFE-103 - Environment-based endpoint config (dev/prod API base URL). Done 2026-08-01.
+## Phase 1 - Auth Shell
+- [x] TFE-101 — Login flow and JWT bearer attach against terra-api auth endpoints; this was completed as the auth shell for the frontend.
+- [x] TFE-102 — Protected-route shell for unauthenticated users, redirecting to login where appropriate.
+- [x] TFE-103 — Environment-based API endpoint configuration for dev and prod deployments.
 
-**No signup flow, by design (not a gap):** terra-api's `AuthService` validates against a
-single hardcoded service-account credential (`TerraAuthProperties`, config-driven) — no user
-database exists yet. Per ADR-003's Issuer Model, a real user DB is gated behind a specific
-trigger (a second independent identity consumer, among others) that hasn't fired. Real
-per-customer accounts arrive with ADR-011's `customer_service_access` table (Phase 3 backend
-work, TFE-301/302/303) — even that's a single seeded row, not self-service registration.
-Don't build a Sign Up page until that backend work exists to register against.
+## Phase 2 - Deploy Wiring
+- [x] TFE-201 — Wire frontend build output into terra-api deployment so the frontend is packaged with the backend build.
 
-## Phase 2 - Same-Origin Deploy Wiring (spans this repo + terra-api)
-- [x] TFE-201 - Jenkins: build this repo (`npm ci && npm run build`), copy `build/` into
-      terra-api's `src/main/resources/static` before terra-api's jar is packaged
-      (terra-api-adr-009, 2026-07-24 Update #2). Lives in terra-api's Jenkinsfile, tracked here
-      since it's this repo's deploy dependency. **Live-verified 2026-08-02**: full pipeline green
-      end-to-end on `phase-7-frontend-ci-integration` build #2 (Checkout Frontend → Build Frontend
-      → Test Frontend → Copy Frontend Build → gradle Build/Test → Docker image → Push → Deploy to
-      Staging), staging containers confirmed `Up`/healthy on the real EC2 box. Two lockfile bugs
-      fixed first (typescript floated to an incompatible major via an unpinned optional peer dep,
-      tailwindcss/yaml peer conflict) — both closed via `rm -rf node_modules package-lock.json &&
-      npm install` plus a `typescript` override pin; full detail in `DEV_LOG.md`. Also added this
-      repo's own CI-only `Jenkinsfile` (checkout/build/test, no deploy — same-origin means no
-      independent artifact) and split both repos' Jenkins jobs into `-main`/`-branches` pairs for
-      organizational clarity. `phase-1-auth-shell` merged into `main` as a prerequisite, since
-      Jenkins builds `main` and Phase 1 hadn't landed there yet.
+## Phase 3 - Backend Health & Entitlements
+- [x] TFE-301 — Support ecosystem health endpoints so the frontend can consume shared health data.
+- [x] TFE-302 — Seed customer service access data for the entitlement model.
+- [x] TFE-303 — Add role and audience claims to JWTs so the frontend can rely on richer auth context.
 
-## Phase 3 - Backend Health, Entitlement & Role Claim (terra-api repo, not this one)
-- [x] TFE-301 - `GET /api/v1/ecosystem/health` endpoint (terra-api-adr-005 amendment).
-- [x] TFE-302 - `customer_service_access` table, seeded single-row (terra-api-adr-011).
-- [x] TFE-303 - `role`/`aud` JWT claim on `SelfTokenIssuer`/`TokenValidator` (terra-api-adr-010's
-      trigger fired via this build; bundled into this phase for deploy efficiency, not because
-      Phase 4 needs it yet).
+## Phase 4 - Visualizer Integration
+- [x] TFE-401 — Port the public visualizer experience into this repo, using the shared Terra API health model.
+- [x] TFE-402 — Filter cubes per customer entitlement so the visualizer reflects what the customer is allowed to see.
+- [x] TFE-403 — Apply health-tier color states so cubes reflect HEALTHY, YELLOW, ORANGE, and RED states.
 
-## Phase 4 - Visualizer Integration (this repo, depends on Phase 3)
-> **Naming note:** two unrelated "phase" numbers collide here and it has caused real
-> confusion. This is **ADR-009 Build Sequence Phase 4** (auth shell → deploy wiring →
-> backend health → visualizer), and the branch is `phase-4-visualizer`. It ports
-> **`terra_api_visualizer_phase5.js`**, which is hq-site's own version number for that FILE
-> — phases 1-4 of it sit in `terra-hq-site/archive/` and are superseded. Both numbers are
-> correct; they count different things. phase5 is the best/current visualizer and is what
-> ADR-009 calls the shared Three.js reference implementation.
-- [x] TFE-401 - Repurpose `terra-hq-site/terra_api_visualizer_phase5.js`'s Three.js logic into
-      this repo.
-- [x] TFE-402 - Cube filtering per customer, consuming Phase 3's entitlement-filtered endpoint.
-- [x] TFE-403 - Health-tier color model (HEALTHY/YELLOW/ORANGE/RED, grey/navy off-state) per
-      terra-api-adr-009's Consequences section.
-- Note: can start on static/mock data in parallel with Phase 3, switch over once the real
-  endpoint exists.
+## Phase 5 - Reachability & Hardening
+- [x] TFE-501 — Fix unauthenticated SPA reachability so the dashboard can actually load without getting blocked by security rules.
+- [ ] TFE-502 — Redirect unauthenticated users to login instead of leaving them on a broken page when auth is required.
+- [ ] TFE-503 — Expand frontend test coverage so the visualizer and dashboard remain stable as the feature set grows.
 
-## Phase 5 - Production Reachability & Hardening (not an ADR-009 build-sequence phase; ops/quality gaps found post-launch)
-- [x] TFE-501 - Fix: SPA static assets return 401 for unauthenticated visitors, so nobody can
-      actually reach the dashboard despite a working deploy. **Root cause confirmed 2026-08-03**:
-      the Jenkins `master` pipeline (build #6, `81d4d7e`) ran "Copy Frontend Build" → "Deploy to
-      Prod" successfully — the deploy mechanism (TFE-201) works, on staging AND prod. The actual
-      bug was `terra-api/SecurityPaths.PERMIT_ALL_PATTERNS` never including the SPA's own routes
-      — only `/actuator/**`, `/api/auth/login`, `/api/v1/ecosystem/public-health`, `/error` were
-      permitted, so Spring Security 401s the shell itself before a browser ever gets the JS to
-      run the client-side login redirect (TFE-102). Superseded HUB_STATE's prior "the deploy has
-      never run" framing — that was wrong; the deploy runs fine, reachability was a
-      security-config gap. **Real fix shipped**: an enumerated-static-asset-list approach was
-      drafted first and discarded — it could never cover an arbitrary client-side React Router
-      path (e.g. a bookmarked `/dashboard`), since Ant patterns can't express "permit everything
-      except X." Replaced with a full posture flip in `SecurityPaths`/`SecurityConfig`: `/api/**`
-      requires auth by default (verified 2026-08-03 that every `@RestController` in the codebase
-      lives under `/api/**` — nothing else exposes data), everything else is public by design,
-      covering any client-side route including deep-links with zero maintenance. **Live-verified
-      2026-08-03** after redeploy: `GET /` → `200` (was `401`); `GET
-      /api/v1/ecosystem/public-health` still `200` (unaffected); `GET /api/v1/flags` without a
-      token still `401` (still correctly guarded).
-- [ ] TFE-502 - Fix: a 401 leaves the user on a broken page instead of redirecting to login (hit
-      twice 2026-08-02).
-- [ ] TFE-503 - Test coverage: 10 of 12 modules have none (only `healthColors`/`domainConfig`
-      covered, 18 tests).
+## Backlog — Refinement / Future Design Work
+- [ ] TFE-601 — "My Services" / "Ecosystem" tab split. Design brainstormed 2026-08-08, not yet
+      built — deliberately shelved for a dedicated design session, not today's work. Root
+      observation: today ALL 8 domain cubes + all launchpad cards render identically for every
+      customer regardless of entitlement (`customer_service_access` only ever changes cube/card
+      COLOR via `statusByServiceId`, never visibility) — conflates ecosystem-wide product
+      maturity (`productConfig.js`'s `isLocked`, same for everyone) with per-customer
+      entitlement (currently unused by the frontend for gating anything). Agreed direction:
+      two tabs inside `Dashboard.js` (no routing change) — "My Services" (new default; reuses
+      `ProductLaunchpad`'s card grid filtered to `PRODUCTS.filter(p => p.serviceId &&
+      statusByServiceId[p.serviceId])`, no 3D scene, needs an honest empty state for zero
+      entitlements) and "Ecosystem" (today's full `terraScene.js` topology + unfiltered
+      launchpad, unchanged — stays the discovery/upsell surface). Deferred/known gap, not
+      addressed: entitled-but-currently-unreported services (health endpoint silently omitting
+      a truly-entitled service during an outage) — revisit if actually observed, not designed
+      against speculatively. A separate, later idea floated in the same conversation — some kind
+      of 3D/animated transition for the customer review experience — is its own future design
+      project, not scoped here at all.
+- [ ] TFE-602 — Replace placeholder branding on the /internal (ApiDashboard) page and app-wide
+      favicon with Will's real designs, once they exist. Two independent slots, same status
+      (placeholder now, design TBD, likely animated per Will 2026-08-09):
+      (1) Nav logo — `ApiDashboard.js`'s `.nav-brand-placeholder` span (currently plain text
+      "LOGO" in a dashed box, deliberately unstyled so it reads as "not built" rather than a
+      real design choice — same pattern as `Login.js`'s social-login placeholders). Swap the
+      whole span for the real mark/animation; styling lives in `api-dashboard.css`.
+      (2) Browser tab favicon — still CRA's default React logo. Three files, no code changes
+      needed: `public/favicon.ico`, `public/logo192.png`, `public/logo512.png` (referenced from
+      `public/index.html` and `public/manifest.json`) — replace in place with matching
+      filenames once designed.

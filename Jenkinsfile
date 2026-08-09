@@ -55,5 +55,19 @@ pipeline {
         failure {
             echo "Build #${BUILD_NUMBER} failed — check the stage logs above."
         }
+        always {
+            // WHY 'npm cache verify' not 'npm cache clean --force'?
+            // This pipeline has no Docker build (see file header — same-origin
+            // deploy means terra-api's own pipeline ships the build output), so
+            // terra-api's 'docker image prune' has nothing to prune here. npm's
+            // cache is content-addressed and self-managing, unlike Docker image
+            // layers (the actual cause of the roms-pipeline disk-fill this
+            // pattern traces back to — see HUB_GUIDE.md Operating Incidents) —
+            // it doesn't grow unbounded, so a full wipe would only throw away
+            // reusable cache for the next 'npm ci' with no matching disk-growth
+            // problem to justify it. 'verify' prunes corrupted/unreachable
+            // entries only and keeps the rest intact.
+            sh 'npm cache verify'
+        }
     }
 }
