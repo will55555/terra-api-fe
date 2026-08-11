@@ -728,3 +728,81 @@ already the desired behavior once the swap landed, not a separate bug to fix.
 - Nothing in this session was committed or pushed — confirmed via `git log`/`git status -sb`
   before this entry was written; nothing in this list should be read as already-live in any
   deployed environment.
+
+---
+
+## Visualizer Polish + ApiDashboard Text Corrections
+**Date:** 2026-08-09  **Status:** Complete, committed (`a1d72af` + follow-ups), verified locally
+by Will via `npm start` before this entry was written.
+
+### Goal
+Four small, independently-requested `terraScene.js`/`api-dashboard.css` fixes surfaced live while
+Will was reviewing the page, plus text corrections from the same-day ApiDashboard content audit
+(full writeup: `terra-api/DEV_LOG.md`, "Content Accuracy Audit — ApiDashboard Tabs vs. Notion/Hub
+State").
+
+### Fix 1: Disconnected anchor cube used the wrong color relative to its own tubes
+The Overview tab's Terra API visualizer showed a "STATUS UNAVAILABLE / Reconnecting" state (a
+side effect of an expired JWT with no session-expiry UX — see TFE-603, still unfixed) where the
+pipeline tubes render bright red (`terraScene.js`'s tube shader hardcodes
+`vec3(1.0, 0.2, 0.2)`/`0xff3333` equivalent when disconnected) but the anchor cube itself used an
+unrelated muted mauve (`0xaa8899`, set in `updateCubeConnection()`, originally chosen 2026-08-04
+specifically so a disconnected anchor wouldn't look identical to a dim connected one). Fixed by
+changing just the disconnected-state hex to `0xff3333`, matching the tubes — Will explicitly
+asked for a color-only change, no opacity/transmission adjustments, even though the anchor's
+`MeshPhysicalMaterial` (`transmission: 0.7`) means it won't fade the same way the tubes'
+flat-shaded alpha blending does; flagged as a known follow-up if it still reads as too solid.
+
+### Fix 2: Light-mode nav buttons were invisible (solid near-black circles)
+`api-dashboard.css` line 149 had `:root[data-theme='light'] .api-shell .theme-toggle { background:
+#0a0c10; ... }` — a light-mode-only override forcing near-black on the theme-toggle, sign-out, and
+menu-hamburger buttons (all three share `.theme-toggle`'s base class, confirmed via grep that
+neither `.nav-signout` nor `.nav-menu-toggle` had their own separate background rule). Root cause
+likely a leftover from the verbatim HTML port that nobody re-checked once the button set changed.
+Fixed by deleting the override entirely — buttons now fall back to the base rule (`background:
+none`, `border: 1px solid var(--border)`), same visual treatment as dark mode, theme-adaptive via
+existing CSS variables.
+
+### Fix 3: ROMS cube click did nothing — now opens the ROMS site
+`handleClick()` in `terraScene.js` previously only handled expand/collapse/scatter for every
+non-anchor cube, with no navigation behavior at all. Added a check for
+`config.serviceId === 'roms'` (the join key `domainConfig.js` already carries for ROMS
+specifically — see that file's own header comment on why only ROMS/PIOS have a `serviceId`) that
+opens `http://100.60.7.24` (ROMS's confirmed current production IP, no domain yet) in a new tab
+via `window.open(..., '_blank', 'noopener,noreferrer')`, returning early before the normal
+expand/collapse logic runs. Deliberately opens the bare root, not an assumed subpath (an earlier
+draft assumed `/menu` — corrected per Will's explicit "let it redirect there on its own").
+
+### Fix 4: Auto-rotate only resumed via double-click, never on its own
+The visualizer's idle auto-spin (`autoRotate`, added 2026-08-04) stopped permanently on any drag
+and previously only resumed via an explicit double-click (`onDoubleClick()` sets
+`autoRotate = true`) — there was no time-based resume at all, despite the hint text implying one
+behavior always existed. Added `lastInteractionTime` (stamped on every `onPointerDown` and
+`handleClick`) and `IDLE_RESUME_MS = 5000`; the animation loop now checks
+`!autoRotate && !isDragging && Date.now() - lastInteractionTime >= IDLE_RESUME_MS` each frame and
+resumes rotation automatically. Double-click still works as an immediate manual override — this
+is additive, not a replacement. Left as-is per Will's explicit call: the hint text still only
+mentions double-click, not updated to also mention the new idle-resume, since double-click remains
+a valid manual option and the omission isn't misleading.
+
+### Deferred: TFE-605 — cube slow-pulse animation
+Will noted the original (phase5/hq-site) visualizer had a slow ambient pulse on cubes that this
+React port doesn't currently reproduce, and explicitly deferred it ("that'll be lots of math").
+Logged as `TFE-605` in `TASKS.md`'s Backlog — flags an open question worth resolving before
+starting the work: whether this is about the existing health-driven `shouldPulse(status)` pulse
+(already wired in `applyHealth()`/`healthColors.js`) not firing/looking right, or a separate
+always-on ambient pulse phase5 had independent of health state.
+
+### Text corrections (ApiDashboard content audit)
+Applied to `OverviewTab.js` (ADR count/table row) as part of the same-day content-accuracy pass —
+full detail in `terra-api/DEV_LOG.md`'s own entry for this audit, not duplicated here since the
+underlying facts (Notion ADR statuses) live in that repo's domain, not this one's.
+
+### Known Limitations / Next
+- Fix 1 (anchor color) may still read as more solid/opaque than the tubes, since opacity/
+  transmission were deliberately left untouched — revisit only if Will flags it as still wrong
+  after live use, not proactively.
+- TFE-605 (slow-pulse) remains unscoped and unbuilt, correctly deferred.
+- Committed as a small number of focused commits (anchor color fix landed separately from the
+  light-mode/ROMS-click/idle-rotate batch) — see `git log` for exact commit boundaries rather than
+  assuming this entry maps 1:1 to a single commit.
