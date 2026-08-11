@@ -18,7 +18,7 @@ export default function AdrsTab() {
           <div className="adr-id">001</div>
           <div>
             <div className="adr-title">Dashboard Gateway Service</div>
-            <div className="adr-desc">Terra API is the central gateway for all Terra dashboards — routes browser frontend requests to all upstreams (Notion, ROMS, PIOS), eliminating CORS issues and providing a single stable contract. Spring Boot over FastAPI: ROMS infrastructure reuse, production-level expertise, zero new infra for Phase 1. <strong>terra-api-adr-001</strong></div>
+            <div className="adr-desc">Terra API is the central gateway for all Terra dashboards — routes browser frontend requests to all upstreams (Notion, OMS, PIOS), eliminating CORS issues and providing a single stable contract. Spring Boot over FastAPI: OMS infrastructure reuse, production-level expertise, zero new infra for Phase 1. <strong>terra-api-adr-001</strong></div>
           </div>
           <span className="badge b-p1">Phase 1</span>
         </div>
@@ -108,7 +108,7 @@ export default function AdrsTab() {
           <div className="adr-id">011</div>
           <div>
             <div className="adr-title">Customer Service Entitlement Model</div>
-            <div className="adr-desc">A <code>customer_service_access(customer_id, service_id)</code> Postgres table, queried at request time by <code>GET /api/v1/ecosystem/health</code> and keyed on the JWT's <code>sub</code> claim — answers &quot;what can this customer see,&quot; distinct from ADR-003's &quot;who is this caller.&quot; The schema seam exists and the endpoint works end-to-end, but the table ships empty: no customer identity exists yet to seed it against (the only <code>sub</code> issued today is ROMS's service account, not a human customer). Entitlement-assignment tooling is deliberately deferred until a second real customer account is provisioned. <strong>terra-api-adr-011</strong></div>
+            <div className="adr-desc">A <code>customer_service_access(customer_id, service_id)</code> Postgres table, queried at request time by <code>GET /api/v1/ecosystem/health</code> and keyed on the JWT's <code>sub</code> claim — answers &quot;what can this customer see,&quot; distinct from ADR-003's &quot;who is this caller.&quot; The schema seam exists and the endpoint works end-to-end, but the table ships empty: no customer identity exists yet to seed it against (the only <code>sub</code> issued today is OMS's service account, not a human customer). Entitlement-assignment tooling is deliberately deferred until a second real customer account is provisioned. <strong>terra-api-adr-011</strong></div>
           </div>
           <span className="badge b-p3">Phase 3</span>
         </div>
@@ -117,7 +117,7 @@ export default function AdrsTab() {
           <div className="adr-id">012</div>
           <div>
             <div className="adr-title">Internal Operator Dashboard</div>
-            <div className="adr-desc">A separate <code>/internal</code> route inside terra-api-fe (not a separate app), gated on the <code>internal</code> audience — built after prod ran degraded for roughly 40 hours undetected. Authorization is enforced server-side; the route gate is UX only. Requires BOTH <code>role=internal</code> AND an explicit <code>ops:read</code> scope — role alone would accidentally grant the ROMS service account (legitimately <code>role=internal</code> as infrastructure) visibility into cross-customer operator data. A real operator account now exists (provisioned directly against prod 2026-08-09, TAPI-025) — the gate has a live consumer, not just built-and-waiting. <strong>terra-api-adr-012</strong></div>
+            <div className="adr-desc">A separate <code>/internal</code> route inside terra-api-fe (not a separate app), gated on the <code>internal</code> audience — built after prod ran degraded for roughly 40 hours undetected. Authorization is enforced server-side; the route gate is UX only. Requires BOTH <code>role=internal</code> AND an explicit <code>ops:read</code> scope — role alone would accidentally grant the OMS service account (legitimately <code>role=internal</code> as infrastructure) visibility into cross-customer operator data. A real operator account now exists (provisioned directly against prod 2026-08-09, TAPI-025) — the gate has a live consumer, not just built-and-waiting. <strong>terra-api-adr-012</strong></div>
           </div>
           <span className="badge b-proposed">Proposed</span>
         </div>

@@ -42,14 +42,14 @@ export default function CoreServicesTab() {
         <div className="svc-card">
           <div className="svc-label">Service 5</div>
           <div className="svc-title">Billing Primitives</div>
-          <div className="svc-desc">Subscription management and payment processor abstraction shared across all products. ROMS SaaS fees, PIOS governance fees, Terra Nkap card issuance — all route through one billing primitive layer. Product-specific pricing logic, discount rules, and billing terms stay in each product's domain. Swap payment processors without touching product code.</div>
+          <div className="svc-desc">Subscription management and payment processor abstraction shared across all products. OMS SaaS fees, PIOS governance fees, Terra Nkap card issuance — all route through one billing primitive layer. Product-specific pricing logic, discount rules, and billing terms stay in each product's domain. Swap payment processors without touching product code.</div>
           <div className="svc-principle"><strong>Principle 4.3:</strong> Billing primitives live here. Billing decisions live in each product domain. The boundary is explicit.</div>
         </div>
 
         <div className="svc-card">
           <div className="svc-label">Service 6</div>
           <div className="svc-title">Notifications</div>
-          <div className="svc-desc">Email, push, and SMS delivery infrastructure shared across all customer-facing products. ROMS operator alerts, PIOS kill-switch notifications (ADR-014), Terra Nkap tier upgrade confirmations — all route through one notification layer. Notification content, templates, and trigger logic stay in each product's domain.</div>
+          <div className="svc-desc">Email, push, and SMS delivery infrastructure shared across all customer-facing products. OMS operator alerts, PIOS kill-switch notifications (ADR-014), Terra Nkap tier upgrade confirmations — all route through one notification layer. Notification content, templates, and trigger logic stay in each product's domain.</div>
           <div className="svc-principle"><strong>DRY at the enterprise level:</strong> Three products independently integrating Twilio, FCM, and SendGrid is unnecessary cost and maintenance surface.</div>
         </div>
       </div>

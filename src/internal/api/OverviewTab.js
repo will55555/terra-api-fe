@@ -49,13 +49,13 @@ export default function OverviewTab() {
         <div className="scard"><div className="sval">9</div><div className="slabel">ADRs Accepted</div></div>
         <div className="scard"><div className="sval">6</div><div className="slabel">Core Services</div></div>
         <div className="scard"><div className="sval">SB</div><div className="slabel">Spring Boot 3.x · Java 21</div></div>
-        <div className="scard"><div className="sval">EC2</div><div className="slabel">AWS · Phase 1 shared with ROMS</div></div>
+        <div className="scard"><div className="sval">EC2</div><div className="slabel">AWS · Phase 1 shared with OMS</div></div>
       </div>
 
       <div className="block">
         <div className="sh"><span className="sh-index">01</span><span className="sh-title">What Terra API Is</span><span className="sh-line" /></div>
         <div className="callout">
-          Terra API is the <strong>Foundation Layer</strong> for the entire Terra Inc ecosystem — a shared infrastructure platform built in Spring Boot 3.x (Java 21) that provides auth/trust, observability, health orchestration, feature flags, billing primitives, and notifications as platform-level services consumed by all Terra subsidiaries (ROMS, PIOS, Terra Nkap, Terra Apparel, etc.). It is not a product. It has no customers. It has no external revenue. It is what transforms five independent companies-under-one-brand into an actual ecosystem.
+          Terra API is the <strong>Foundation Layer</strong> for the entire Terra Inc ecosystem — a shared infrastructure platform built in Spring Boot 3.x (Java 21) that provides auth/trust, observability, health orchestration, feature flags, billing primitives, and notifications as platform-level services consumed by all Terra subsidiaries (OMS, PIOS, Terra Nkap, Terra Apparel, etc.). It is not a product. It has no customers. It has no external revenue. It is what transforms five independent companies-under-one-brand into an actual ecosystem.
         </div>
         <div className="callout gold">
           <strong>Why the Foundation Layer matters:</strong> Without it, every Terra product independently builds auth, billing, notifications, and observability — creating divergence, duplication, and coupling that makes individual vertical exits or spin-offs structurally impossible. The Foundation Layer eliminates that duplication while preserving the independence of each domain service. The holding company model (Terra Inc → subsidiaries) only works long-term if each subsidiary can be operated, sold, or spun off independently — Terra API is what makes that possible at the technical level.
@@ -74,10 +74,10 @@ export default function OverviewTab() {
             <tr><td style={{ color: 'var(--text)' }}>Layer</td><td>API Layer · Criticality: High</td></tr>
             <tr><td style={{ color: 'var(--text)' }}>Technology</td><td>Spring Boot 3.x, Java 21, Gradle</td></tr>
             <tr><td style={{ color: 'var(--text)' }}>Port (local dev / EC2)</td><td>8080 / 8080 · Management: 8082 (Actuator only) · Public HTTPS: api.terra-hq.com (Cloudflare-proxied)</td></tr>
-            <tr><td style={{ color: 'var(--text)' }}>Host (Phase 1–2)</td><td>Shared EC2 t2.small (Ubuntu) — same instance as ROMS</td></tr>
+            <tr><td style={{ color: 'var(--text)' }}>Host (Phase 1–2)</td><td>Shared EC2 t2.small (Ubuntu) — same instance as OMS</td></tr>
             <tr><td style={{ color: 'var(--text)' }}>Host (Phase 3+)</td><td>Separate EC2 instance when load warrants</td></tr>
             <tr><td style={{ color: 'var(--text)' }}>State model</td><td>Stateless in Phase 1–2 — Caffeine in-memory cache, no persistent DB; Phase 3 adds persistent audit log store</td></tr>
-            <tr><td style={{ color: 'var(--text)' }}>Why Spring Boot</td><td>ROMS infrastructure reuse (same EC2, same Jenkins CI/CD, same stack expertise at production level). Zero new infrastructure for Phase 1. ADR-001.</td></tr>
+            <tr><td style={{ color: 'var(--text)' }}>Why Spring Boot</td><td>OMS infrastructure reuse (same EC2, same Jenkins CI/CD, same stack expertise at production level). Zero new infrastructure for Phase 1. ADR-001.</td></tr>
             <tr><td style={{ color: 'var(--text)' }}>ADRs</td><td>ADR-001 through ADR-013 — 9 accepted, 4 proposed/designed (see ADRs tab)</td></tr>
           </tbody>
         </table>
@@ -104,7 +104,7 @@ export default function OverviewTab() {
                 Event bus routing
               </td>
               <td>
-                Domain business logic (ROMS orders, PIOS capital rules, Terra Nkap tier mechanics)<br /><br />
+                Domain business logic (OMS orders, PIOS capital rules, Terra Nkap tier mechanics)<br /><br />
                 Domain source-of-truth data<br /><br />
                 Cross-domain direct database access<br /><br />
                 Decisions that belong to individual product domains

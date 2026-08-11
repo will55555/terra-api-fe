@@ -15,7 +15,7 @@ export default function EcosystemArchitectureTab() {
         <div className="sh"><span className="sh-index">14</span><span className="sh-title">Service Layers</span><span className="sh-line" /></div>
         <div className="eco-timeline">
           <div className="eco-timeline-item"><div className="eco-timeline-phase">Foundation</div><div className="eco-timeline-desc"><strong>Terra API</strong> — Centralized trust layer. Manages identity, health/quarantine monitoring, an audit log bus, and billing primitives. All services authenticate here and emit state changes through the audit log.</div></div>
-          <div className="eco-timeline-item"><div className="eco-timeline-phase">Commerce</div><div className="eco-timeline-desc"><strong>ROMS</strong> (Route &amp; Order Management) — Real-time order orchestration, inventory sync, delivery coordination. Powers retail, marketplaces, and logistics across all properties.</div></div>
+          <div className="eco-timeline-item"><div className="eco-timeline-phase">Commerce</div><div className="eco-timeline-desc"><strong>OMS</strong> (Order Management System) — Real-time order orchestration, inventory sync, delivery coordination. Powers retail, marketplaces, and logistics across all properties.</div></div>
           <div className="eco-timeline-item"><div className="eco-timeline-phase">Investment</div><div className="eco-timeline-desc"><strong>PIOS</strong> (Personal Investment OS) — Transparent capital governance. Users see exactly where investments go, get automated distributions, and can participate in venture decisions.</div></div>
           <div className="eco-timeline-item"><div className="eco-timeline-phase">Domains</div><div className="eco-timeline-desc"><strong>Business Verticals</strong> — Finance, Hospitality, Real Estate, Agriculture, Apparel, Ventures. Each operates its own logic but shares identity, events, and billing through the foundation.</div></div>
         </div>
@@ -25,7 +25,7 @@ export default function EcosystemArchitectureTab() {
       <div className="block">
         <div className="sh"><span className="sh-index">15</span><span className="sh-title">Deployment Strategy</span><span className="sh-line" /></div>
         <div className="eco-grid-3">
-          <div className="eco-card"><div className="eco-card-title">Phase 1</div><div className="eco-card-desc">Foundation + Dashboard. Terra API and ROMS deployed and live. PIOS remains design-phase only — ADRs accepted, no code or deployment yet. Web dashboards for observability.</div></div>
+          <div className="eco-card"><div className="eco-card-title">Phase 1</div><div className="eco-card-desc">Foundation + Dashboard. Terra API and OMS deployed and live. PIOS remains design-phase only — ADRs accepted, no code or deployment yet. Web dashboards for observability.</div></div>
           <div className="eco-card"><div className="eco-card-title">Phase 2</div><div className="eco-card-desc">Business verticals go live. Real estate, hospitality, finance, agriculture services deploy and integrate.</div></div>
           <div className="eco-card"><div className="eco-card-title">Phase 3+</div><div className="eco-card-desc">Scale &amp; optimize. Payment rails, AI features, international expansion, and institutional integrations.</div></div>
         </div>

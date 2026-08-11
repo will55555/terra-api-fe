@@ -24,7 +24,7 @@ export default function EcosystemPublicTab() {
         <div className="eco-grid-2">
           <div className="eco-card">
             <div className="eco-card-title">Commerce Engine</div>
-            <div className="eco-card-desc">Route &amp; Order Management System (ROMS) powers retail, delivery, and marketplace operations across all Terra properties. Real-time order tracking, inventory sync, and fulfillment orchestration.</div>
+            <div className="eco-card-desc">Order Management System (OMS) powers retail, delivery, and marketplace operations across all Terra properties. Real-time order tracking, inventory sync, and fulfillment orchestration.</div>
           </div>
           <div className="eco-card">
             <div className="eco-card-title">Investment OS</div>

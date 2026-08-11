@@ -16,7 +16,7 @@ export default function ForPartnersTab() {
         <div className="eco-grid-2">
           <div className="eco-card"><div className="eco-card-title">Webhooks &amp; Events</div><div className="eco-card-desc">Subscribe to order creation, payment completion, or inventory changes. React in real-time without polling. Event signatures ensure cryptographic security.</div></div>
           <div className="eco-card"><div className="eco-card-title">REST API</div><div className="eco-card-desc">Query orders, balances, user data, and business metrics. JWT-authenticated endpoints, with coverage expanding as the auth rollout continues. Standardized error handling and pagination.</div></div>
-          <div className="eco-card"><div className="eco-card-title">Marketplace Integration</div><div className="eco-card-desc">Become a vendor on ROMS. Sync inventory, receive orders, and settle payments through the unified platform. No separate integrations required.</div></div>
+          <div className="eco-card"><div className="eco-card-title">Marketplace Integration</div><div className="eco-card-desc">Become a vendor on OMS. Sync inventory, receive orders, and settle payments through the unified platform. No separate integrations required.</div></div>
           <div className="eco-card"><div className="eco-card-title">Capital Participation</div><div className="eco-card-desc">Invest in Terra ventures through PIOS. Transparent cap tables, automated distributions, and governance participation as a limited partner.</div></div>
         </div>
         <div className="callout"><strong>Getting started:</strong> Contact us at partnerships@terra-hq.com. We'll provide API credentials, sandbox access, and technical documentation tailored to your use case.</div>

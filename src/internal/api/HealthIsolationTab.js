@@ -40,7 +40,7 @@ export default function HealthIsolationTab() {
       <div className="block">
         <div className="sh"><span className="sh-index">08</span><span className="sh-title">Independence During Isolation</span><span className="sh-line" /></div>
         <div className="callout gold">
-          <strong>Critical design constraint (Principle 4.4):</strong> When a service is quarantined, the other services must continue operating normally. The quarantine of SYS-ROMS must not affect SYS-PIOS or any other service. Terra API's health orchestration is designed to contain the blast radius of the affected service — not to amplify it across the ecosystem. The quarantine is a scalpel, not a circuit breaker for the whole system.
+          <strong>Critical design constraint (Principle 4.4):</strong> When a service is quarantined, the other services must continue operating normally. The quarantine of SYS-OMS must not affect SYS-PIOS or any other service. Terra API's health orchestration is designed to contain the blast radius of the affected service — not to amplify it across the ecosystem. The quarantine is a scalpel, not a circuit breaker for the whole system.
         </div>
         <div className="callout">
           <strong>What services must do for this to work:</strong> Each service must be designed to operate independently when its shared infrastructure calls fail or are unavailable. A service that hard-depends on Terra API for every operation cannot be isolated safely — isolating it would break everything upstream. Engineering Principle 4.2 enforces this: &quot;Shared systems may enhance capabilities, but must never prevent services from operating independently.&quot;

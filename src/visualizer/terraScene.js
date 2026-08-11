@@ -78,7 +78,7 @@ function buildCubeConfig() {
 }
 
 // serviceId lookup by cube name, derived the same way phase5's SERVICE_ID_BY_CUBE_NAME was —
-// only cubes with a real serviceId (ROMS, PIOS today) get health-driven colour.
+// only cubes with a real serviceId (OMS, PIOS today) get health-driven colour.
 function buildServiceIdByCubeName() {
   const map = {};
   for (const domain of DOMAINS) {
@@ -143,7 +143,7 @@ export function createScene(canvas, options = {}) {
   const { transparent = false } = options;
   const CUBE_CONFIG = buildCubeConfig();
   // DEV-ONLY TEST TOOLING, added 2026-08-04 — pairs with useEcosystemHealth.js's mock, kept
-  // intentionally. Production only maps ROMS/PIOS (the only domains with a real serviceId), so
+  // intentionally. Production only maps OMS/PIOS (the only domains with a real serviceId), so
   // ?mockHealthAll=1 would have nothing to color for the other 6 domains without this override.
   // Mirrors those same service.id values so every domain/child pair becomes eligible for the
   // mock's synthetic statuses. Only ever active when the query param is present; every normal
@@ -477,7 +477,7 @@ export function createScene(canvas, options = {}) {
     mesh.userData.config.connected = isConnected;
 
     // Floor raised from 0.7/no-glow to 0.55/dim-outline 2026-08-04: at the old values, a
-    // disconnected child (every domain except ROMS/PIOS today, since nothing else has a
+    // disconnected child (every domain except OMS/PIOS today, since nothing else has a
     // reporting service yet) rendered with no emissive glow AND no edge outline, which against
     // the scene's dark background made it functionally invisible — confirmed live by Will as
     // "some children aren't there" when several domains were expanded side by side. The cube is

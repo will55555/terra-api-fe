@@ -38,7 +38,7 @@ export default function BuildSequenceTab() {
           <div className="br-body">
             <div className="br-title">Phase 3 — Full Foundation Layer <span className="badge b-p2" style={{ marginLeft: '8px' }}>Mostly Shipped</span></div>
             <div className="br-desc">
-              <strong>Most of this phase is already live</strong> — Ecosystem health orchestration and quarantine enforcement (ADR-005), rate limiting (ADR-006), audit log bus (ADR-007), and the feature flag service (ADR-008) are all Accepted and shipped, ahead of PIOS. JWT auth is self-issued today (ADR-003 Tier 1, real customers table + BCrypt login) rather than validated against a separate Terra Auth service — that extraction remains gated on a second independent identity consumer. Still genuinely pending: ROMS CRM reads via Terra API, PIOS event WebSocket stream (blocked on PIOS having any code at all — it remains design-phase only), and evaluating a separate EC2 instance if load warrants.
+              <strong>Most of this phase is already live</strong> — Ecosystem health orchestration and quarantine enforcement (ADR-005), rate limiting (ADR-006), audit log bus (ADR-007), and the feature flag service (ADR-008) are all Accepted and shipped, ahead of PIOS. JWT auth is self-issued today (ADR-003 Tier 1, real customers table + BCrypt login) rather than validated against a separate Terra Auth service — that extraction remains gated on a second independent identity consumer. Still genuinely pending: OMS CRM reads via Terra API, PIOS event WebSocket stream (blocked on PIOS having any code at all — it remains design-phase only), and evaluating a separate EC2 instance if load warrants.
             </div>
           </div>
         </div>
@@ -47,7 +47,7 @@ export default function BuildSequenceTab() {
       <div className="block">
         <div className="sh"><span className="sh-index">10</span><span className="sh-title">Pre-Build Gate</span><span className="sh-line" /></div>
         <div className="callout teal">
-          <strong>Historical — Phase 1 pre-work, now complete:</strong> Google Workspace live (will@terra-hq.com) — team identity and dev tooling. Cloudflare Access on terra-hq.com — strategy docs secured. AWS account governance reviewed — ROMS and Terra API sharing vs. separate accounts. EC2 Security Group updated to include CI/CD runner IP for Phase 2 deploy pipeline.
+          <strong>Historical — Phase 1 pre-work, now complete:</strong> Google Workspace live (will@terra-hq.com) — team identity and dev tooling. Cloudflare Access on terra-hq.com — strategy docs secured. AWS account governance reviewed — OMS and Terra API sharing vs. separate accounts. EC2 Security Group updated to include CI/CD runner IP for Phase 2 deploy pipeline.
         </div>
       </div>
     </>
