@@ -12,7 +12,7 @@
 // The one thing added here that phase5 has no concept of: `serviceId`, the join key to
 // GET /api/v1/ecosystem/health. hq-site renders a static public topology and never asks who
 // is entitled to what; this build filters by entitlement, so it needs to know which cube
-// maps to which reporting service. Only ROMS and PIOS have one — every other child is a
+// maps to which reporting service. Only OMS and PIOS have one — every other child is a
 // placeholder for software that does not exist yet, and inventing an id for those would make
 // the visualizer wait on a heartbeat that never arrives.
 
@@ -41,7 +41,7 @@ export const DOMAINS = [
     desc: 'Hospitality operations',
     position: [0.65, 0.65, 0.65],
     // One of only two children that maps to a service reporting real health.
-    service: { id: 'roms', name: 'ROMS', serviceId: 'oms', desc: 'Restaurant Order Management System' },
+    service: { id: 'oms', name: 'OMS', serviceId: 'oms', desc: 'Restaurant Order Management System' },
   },
   {
     id: 'real-estate',

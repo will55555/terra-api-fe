@@ -18,9 +18,9 @@ export const PRODUCT_STATUS = {
 
 export const PRODUCTS = [
   {
-    id: 'roms',
+    id: 'oms',
     domainId: 'hospitality',
-    name: 'ROMS',
+    name: 'OMS',
     desc: 'Restaurant Order Management System',
     status: PRODUCT_STATUS.ACTIVE,
     // The only product with a deployed backend that reports health, so the only one whose

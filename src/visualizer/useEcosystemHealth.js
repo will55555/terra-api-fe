@@ -24,10 +24,10 @@ const POLL_INTERVAL_MS = 30000;
 // a heartbeat, and it stays useful for the same purpose after that (e.g. testing a tier this
 // build has never actually seen in production). Opt-in only via a URL query param — real fetch/
 // poll runs unmodified whenever neither flag is present, which is every normal page load:
-//   ?mockHealth=1    — two services (ROMS/PIOS), matching what production actually maps today
+//   ?mockHealth=1    — two services (OMS/PIOS), matching what production actually maps today
 //   ?mockHealthAll=1 — all 8 domains lit with varying status, for inspecting every cube/child
 //                      pair in one pass (pairs with terraScene.js's matching
-//                      SERVICE_ID_BY_CUBE_NAME override — production only maps ROMS/PIOS by
+//                      SERVICE_ID_BY_CUBE_NAME override — production only maps OMS/PIOS by
 //                      design, so testing the other 6 needs that override too)
 function getMockHealthOverride() {
   if (typeof window === 'undefined') return null;

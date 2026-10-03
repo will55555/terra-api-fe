@@ -33,8 +33,8 @@ describe('taxonomy', () => {
     // OMS and PIOS are the only deployed services. Every other domain is deliberately
     // serviceless: a domain with no built software has no health to report, and inventing a
     // serviceId for it would make the visualizer wait on a heartbeat that never comes.
-    // (serviceId renamed roms->oms 2026-10-04, OMS-013 — ROMS stays the internal/engineering
-    // codename, see domainConfig.js's own `id: 'roms'` field, which this test doesn't touch.)
+    // (serviceId renamed roms->oms 2026-10-04, OMS-013; domainConfig.js's own `id`/`name`
+    // fields renamed the same pass for full consistency — ROMS no longer appears anywhere.)
     expect(KNOWN_SERVICE_IDS.sort()).toEqual(['oms', 'pios']);
   });
 
