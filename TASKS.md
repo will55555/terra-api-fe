@@ -93,3 +93,40 @@
       `healthColors.js`) — confirm whether this ask is about THAT pulse not firing/looking right,
       or a separate always-on ambient pulse phase5 had independent of health state, before
       starting the implementation.
+- [x] TFE-606 — Confirmed visualizer location + recorded the 8-cube role model (2026-10-03,
+      documentation only, no code touched). Closes the Notion/ALL_TASKS.md task "Visualizer:
+      confirm location (terra-api-fe?) + record 8-cube role model." **Location**: the live,
+      production visualizer is this repo — `terra-api-fe/src/visualizer/` (`domainConfig.js` +
+      `terraScene.js`), a React/Three.js port, live at https://api.terra-hq.com/. The copy at
+      `terra-hq-site/Assets/archive/terra_api_visualizer_phase5.js` + `.html` is archived (moved
+      to `Assets/archive/` 2026-08-09) and is not referenced by any live hq-site page — confirmed
+      earlier via grep, zero hits in `index.html`, `terra_initiative.html`, `terra_tech.html`.
+      This matches THQ-001's own closure ("migration happened — visualizer lives in terra-api-fe
+      now, hq-site's copy is only kept as a relic"); this entry is the terra-api-fe side of the
+      same closed decision. **8-cube role model** (source: `domainConfig.js`'s `DOMAINS` array,
+      read in full 2026-10-03 — `serviceId` is the join key to `GET /api/v1/ecosystem/health`,
+      per the file's own header comment citing terra-api-adr-009):
+
+      | id | name | desc | `service.serviceId` | Reports live health? |
+      |---|---|---|---|---|
+      | finance | Finance | Financial services | `null` (child: Nkap) | No — placeholder |
+      | hospitality | Hospitality | Hospitality operations | `'oms'` (child: OMS) | **Yes** |
+      | real-estate | Real Estate | Property management | `null` (planned) | No — placeholder |
+      | agriculture | Agriculture | Farm operations | `null` (planned) | No — placeholder |
+      | apparel | Apparel | Design & commerce | `null` (planned) | No — placeholder |
+      | ventures | Ventures | Investment structuring | `'pios'` (child: PIOS) | **Yes** |
+      | africa | Africa | Regional systems | `null` (planned) | No — placeholder |
+      | solar | Solar | Concept — needs development | `null` (concept) | No — placeholder |
+
+      Only **OMS** (Hospitality) and **PIOS** (Ventures) carry a non-null `serviceId` as of this
+      session — confirmed directly from `KNOWN_SERVICE_IDS` (`DOMAINS.filter(d =>
+      d.service?.serviceId)`), which resolves to exactly `['oms', 'pios']`. Every other domain's
+      `service` object exists (so the nested child cube renders) but with `serviceId: null` —
+      genuine future product slots, not bugs, per the file's own comment: "every other child is a
+      placeholder for software that does not exist yet, and inventing an id for those would make
+      the visualizer wait on a heartbeat that never arrives." **Anchor (Terra API)**: not one of
+      the 8 — `ANCHOR` (`id: 'terra-api'`) is a separate export, rendered at the origin `[0, 0,
+      0]`, occupying the center the 8 corners (`±0.65` on each axis) orbit around. Confirmed in
+      `terraScene.js`: the anchor is built through its own `isAnchor: true` branch at every stage
+      (material, connection-state coloring, edge outline, pulse logic) rather than going through
+      the shared per-domain cube path — architecturally distinct, not an edge case of the 8.
