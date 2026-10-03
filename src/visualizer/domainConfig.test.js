@@ -30,16 +30,18 @@ describe('taxonomy', () => {
   });
 
   it('maps only the services that actually report health', () => {
-    // ROMS and PIOS are the only deployed services. Every other domain is deliberately
+    // OMS and PIOS are the only deployed services. Every other domain is deliberately
     // serviceless: a domain with no built software has no health to report, and inventing a
     // serviceId for it would make the visualizer wait on a heartbeat that never comes.
-    expect(KNOWN_SERVICE_IDS.sort()).toEqual(['pios', 'roms']);
+    // (serviceId renamed roms->oms 2026-10-04, OMS-013 — ROMS stays the internal/engineering
+    // codename, see domainConfig.js's own `id: 'roms'` field, which this test doesn't touch.)
+    expect(KNOWN_SERVICE_IDS.sort()).toEqual(['oms', 'pios']);
   });
 
   it('places each service under the domain it SERVES, not whoever built it', () => {
     // Terra Tech builds most of this software but is not a domain. The regression this
     // catches is someone "correcting" PIOS into a Terra Tech cube.
-    expect(findDomainByServiceId('roms').id).toBe('hospitality');
+    expect(findDomainByServiceId('oms').id).toBe('hospitality');
     expect(findDomainByServiceId('pios').id).toBe('ventures');
   });
 
@@ -82,22 +84,22 @@ describe('ringPositions', () => {
 describe('entitledServices', () => {
   it('maps health-response service ids onto the local taxonomy', () => {
     const result = entitledServices({
-      roms: { running: false },
+      oms: { running: false },
       pios: { running: true, tier: 'HEALTHY' },
     });
 
     expect(result).toHaveLength(2);
-    expect(result.map((s) => s.serviceId).sort()).toEqual(['pios', 'roms']);
-    expect(result.find((s) => s.serviceId === 'roms').domainName).toBe('Hospitality');
+    expect(result.map((s) => s.serviceId).sort()).toEqual(['oms', 'pios']);
+    expect(result.find((s) => s.serviceId === 'oms').domainName).toBe('Hospitality');
   });
 
   it('skips services the frontend has no config for', () => {
     // A backend reporting a service this build does not know about is a config gap worth
     // noticing, not something to render nameless.
-    const result = entitledServices({ roms: { running: true }, unknown_service: { running: true } });
+    const result = entitledServices({ oms: { running: true }, unknown_service: { running: true } });
 
     expect(result).toHaveLength(1);
-    expect(result[0].serviceId).toBe('roms');
+    expect(result[0].serviceId).toBe('oms');
   });
 
   it('returns nothing when the customer is entitled to nothing', () => {
