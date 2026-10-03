@@ -25,7 +25,7 @@ export const PRODUCTS = [
     status: PRODUCT_STATUS.ACTIVE,
     // The only product with a deployed backend that reports health, so the only one whose
     // card can show live state. Wired to the topology via serviceId in domainConfig.
-    serviceId: 'roms',
+    serviceId: 'oms',
     action: { label: 'OPEN', enabled: true },
   },
   {

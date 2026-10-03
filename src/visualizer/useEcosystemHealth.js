@@ -9,8 +9,8 @@ import { authFetch } from '../services/authService';
 // is the whole point of the endpoint existing separately from the operator-facing
 // /actuator/ecosystem-health.
 //
-// Contract, verified live 2026-08-02:
-//   {"services":[{"service_id":"roms","running":false}],"customer_status":"healthy"}
+// Contract, verified live 2026-08-02 (service_id renamed roms->oms 2026-10-04, OMS-013):
+//   {"services":[{"service_id":"oms","running":false}],"customer_status":"healthy"}
 // `tier` is OMITTED (not null) when running is false — see healthColors.js.
 //
 // Polling rather than websockets: quarantine tiers move on heartbeat intervals measured in
@@ -37,7 +37,7 @@ function getMockHealthOverride() {
     // One of each: first domain OFF (never reported), remaining 7 cycled across the 4 real
     // tiers so every domain/child pair shows a distinct, plausible status in one pass.
     const tierCycle = ['HEALTHY', 'YELLOW', 'ORANGE', 'RED'];
-    const allServiceIds = ['nkap', 'roms', 'real-estate-child', 'agriculture-child',
+    const allServiceIds = ['nkap', 'oms', 'real-estate-child', 'agriculture-child',
       'apparel-child', 'pios', 'africa-child', 'solar-child'];
     const [offId, ...onIds] = allServiceIds;
     return {
@@ -56,7 +56,7 @@ function getMockHealthOverride() {
   if (params.get('mockHealth') !== '1') return null;
   return {
     services: [
-      { service_id: 'roms', running: true, tier: 'HEALTHY' },
+      { service_id: 'oms', running: true, tier: 'HEALTHY' },
       { service_id: 'pios', running: true, tier: 'YELLOW' },
     ],
     customer_status: 'degraded',

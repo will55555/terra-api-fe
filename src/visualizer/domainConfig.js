@@ -41,7 +41,7 @@ export const DOMAINS = [
     desc: 'Hospitality operations',
     position: [0.65, 0.65, 0.65],
     // One of only two children that maps to a service reporting real health.
-    service: { id: 'roms', name: 'ROMS', serviceId: 'roms', desc: 'Restaurant Order Management System' },
+    service: { id: 'roms', name: 'ROMS', serviceId: 'oms', desc: 'Restaurant Order Management System' },
   },
   {
     id: 'real-estate',
