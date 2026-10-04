@@ -36,19 +36,23 @@ export const DOMAINS = [
     service: { id: 'nkap', name: 'Nkap', serviceId: null, desc: 'Coin & card system — Orange Money, MTN rails' },
   },
   {
-    id: 'hospitality',
-    name: 'Hospitality',
-    desc: 'Hospitality operations',
-    position: [0.65, 0.65, 0.65],
-    // One of only two children that maps to a service reporting real health.
-    service: { id: 'oms', name: 'OMS', serviceId: 'oms', desc: 'Restaurant Order Management System' },
-  },
-  {
     id: 'real-estate',
     name: 'Real Estate',
     desc: 'Property management',
+    position: [0.65, 0.65, 0.65],
+    // One of only two children that maps to a service reporting real health. Moved here
+    // 2026-10-04 — the old 'hospitality' cube was removed (not renamed) per Will's 2026-09-28
+    // decision: Ha'bem (OMS) runs in-house under Real Estate, not its own top-level domain.
+    service: { id: 'oms', name: 'OMS', serviceId: 'oms', desc: 'Restaurant Order Management System' },
+  },
+  {
+    id: 'tech',
+    name: 'Tech',
+    desc: 'Software & technology',
     position: [-0.65, -0.65, 0.65],
-    service: { id: 'real-estate-child', name: 'Real Estate (Planned)', serviceId: null, desc: 'Planned — no service yet' },
+    // Added 2026-10-04 in this slot (previously the old 'real-estate' placeholder) per Will's
+    // 2026-09-28 decision — Tech is now a visible cube in its own right.
+    service: { id: 'tech-child', name: 'Tech (Planned)', serviceId: null, desc: 'Planned — no service yet' },
   },
   {
     id: 'agriculture',
@@ -76,11 +80,17 @@ export const DOMAINS = [
     service: { id: 'pios', name: 'PIOS', serviceId: 'pios', desc: 'Portfolio & Investment Ops System' },
   },
   {
-    id: 'africa',
-    name: 'Africa',
-    desc: 'Regional systems',
+    id: 'fabrication',
+    name: 'Fabrication',
+    desc: 'Hardware & physical fabrication',
     position: [-0.65, -0.65, -0.65],
-    service: { id: 'africa-child', name: 'Africa (Planned)', serviceId: null, desc: 'Planned — no service yet' },
+    // Added 2026-10-04 in this slot (previously 'africa') per Will's 2026-09-28 decision —
+    // Africa is not a cube (Terra Africa is structurally independent; its work lives inside
+    // whichever cube uses it, e.g. the Cameroon farm pilot lives inside Agriculture — no
+    // per-item annotation mechanism exists yet to flag that visually, a known gap). Fabrication
+    // is organizationally owned by Terra Tech but gets its own cube: cubes show ROLE, not
+    // ownership (see file header) — the HQ puzzle-piece pages nest it inside Tech's own card.
+    service: { id: 'fabrication-child', name: 'Fabrication (Planned)', serviceId: null, desc: 'Planned — no service yet' },
   },
   {
     id: 'solar',

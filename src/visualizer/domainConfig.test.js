@@ -41,7 +41,7 @@ describe('taxonomy', () => {
   it('places each service under the domain it SERVES, not whoever built it', () => {
     // Terra Tech builds most of this software but is not a domain. The regression this
     // catches is someone "correcting" PIOS into a Terra Tech cube.
-    expect(findDomainByServiceId('oms').id).toBe('hospitality');
+    expect(findDomainByServiceId('oms').id).toBe('real-estate');
     expect(findDomainByServiceId('pios').id).toBe('ventures');
   });
 
@@ -90,7 +90,7 @@ describe('entitledServices', () => {
 
     expect(result).toHaveLength(2);
     expect(result.map((s) => s.serviceId).sort()).toEqual(['oms', 'pios']);
-    expect(result.find((s) => s.serviceId === 'oms').domainName).toBe('Hospitality');
+    expect(result.find((s) => s.serviceId === 'oms').domainName).toBe('Real Estate');
   });
 
   it('skips services the frontend has no config for', () => {

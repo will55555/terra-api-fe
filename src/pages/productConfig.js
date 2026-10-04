@@ -19,7 +19,7 @@ export const PRODUCT_STATUS = {
 export const PRODUCTS = [
   {
     id: 'oms',
-    domainId: 'hospitality',
+    domainId: 'real-estate',
     name: 'OMS',
     desc: 'Restaurant Order Management System',
     status: PRODUCT_STATUS.ACTIVE,
