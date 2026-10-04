@@ -153,3 +153,15 @@
       `terraScene.js`: the anchor is built through its own `isAnchor: true` branch at every stage
       (material, connection-state coloring, edge outline, pulse logic) rather than going through
       the shared per-domain cube path — architecturally distinct, not an edge case of the 8.
+
+      **CORRECTION, 2026-10-04**: the table above documents what `domainConfig.js` contained at
+      the time, but this entry's own closure was wrong — the Notion task's own To Do list said
+      "Check whether the code matches the model; if not, update CUBE_CONFIG," and the code did
+      NOT match. Will's actual confirmed model (Notion, dated 2026-09-28, found on re-reading the
+      task directly after Will flagged "hospitality and africa cubes doesn't match last decision"):
+      **Tech, Fabrication, Finance, Ventures, Real Estate, Agriculture, Apparel** — Hospitality
+      removed (OMS moved to live under Real Estate), Africa removed (not a cube at all; Terra
+      Africa is structurally independent), Tech and Fabrication added as new visible cubes.
+      Fixed in commit `e2bb27a` (this repo) and `b851c5b` (terra-hq-site's embedded archive
+      copy, which had the identical stale taxonomy). Solar's slot was deliberately left as a
+      placeholder, per Will's explicit scoping, rather than assigned one of the 7 named roles.
