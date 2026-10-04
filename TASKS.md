@@ -64,13 +64,36 @@
       ecosystem` starts 401ing and `OverviewTab`/`OperatorTab`'s `EcosystemVisualizer` just shows
       a permanent "STATUS UNAVAILABLE / Reconnecting" wireframe state that never resolves on its
       own. Confirmed live: logging out and back in immediately fixes it — the bug is purely the
-      silent-failure UX, not a backend problem. Needs one of: (a) a real refresh-token flow
-      (bigger, touches `AuthService`/`TokenIssuer` on the backend), or (b) at minimum, detect a
-      401 from an authenticated fetch and show a clear "Session expired — log in again" prompt
-      /redirect instead of the current infinite silent retry loop (`useOperatorEcosystem.js` and
-      `useEcosystemHealth.js` both poll on an interval and don't currently distinguish
-      "transient network error, keep retrying" from "401, stop and prompt"). Deliberately not
-      fixed same session found — auth-flow work deserves its own focused pass.
+      silent-failure UX, not a backend problem.
+      **Re-checked against current code 2026-10-04 — plan below is now concrete, not just two
+      options to pick between.** `authFetch` (`src/services/authService.js`) is the single choke
+      point every authenticated call already passes through — both polling hooks
+      (`useOperatorEcosystem.js`, `useEcosystemHealth.js`) call it and currently only distinguish
+      a 403 (operator-tab-specific, not relevant here) before falling into a generic `catch` that
+      sets a plain `error` string with no status-code awareness at all. That means option (b) can
+      be built ONCE, centrally, instead of duplicated per hook:
+      1. In `authFetch` itself, after the `fetch()` call: if `response.status === 401`, call
+         `logout()` (already exported from `authService.js`) to clear the stale token, then throw
+         a distinguishable error (e.g. a small `class SessionExpiredError extends Error {}`) so
+         callers can tell it apart from a generic network failure in their existing `catch`.
+      2. Each hook's `catch (e)` block: `if (e instanceof SessionExpiredError)` → set a new
+         `sessionExpired` boolean in hook state (alongside the existing `error`/`forbidden`
+         pattern already used for 403) instead of the generic `error` message, and stop polling
+         (clear the interval early rather than waiting for `pollIntervalMs` to tick again against
+         a token that's already dead).
+      3. Consuming components (`OverviewTab`/`OperatorTab`'s `EcosystemVisualizer`, wherever
+         `useEcosystemHealth`/`useOperatorEcosystem` are read) check `sessionExpired` the same way
+         they already check `forbidden`, and render a real "Session expired — log in again" state
+         with a link/button to `/login` instead of the current silent infinite-retry wireframe.
+      4. `Login.js`'s existing `?redirect=` query param (used by `ProtectedRoute`/`OperatorRoute`)
+         means the "log in again" link can send the user straight back to where they were —
+         `/login?redirect=${encodeURIComponent(window.location.pathname)}` — rather than dumping
+         them on a blank login page with no way back.
+      This is option (b) only — a real refresh-token flow (option (a), bigger, touches
+      `AuthService`/`TokenIssuer` on the backend) is NOT scoped here; (b) alone turns a silent,
+      permanent dead state into an honest, recoverable one, which is the actual bug being fixed.
+      Still deliberately not built this session — auth-flow work gets its own focused pass, this
+      entry is now detailed enough to execute directly when that pass happens.
 - [ ] TFE-604 — Menu popover feature ideas, noted 2026-08-09 for a future refinement pass
       (explicitly NOT scoped/built yet, just captured so they aren't lost): once the hamburger
       menu becomes a real anchored popover (see the same-day redesign that replaced the
