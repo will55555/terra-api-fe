@@ -26,7 +26,7 @@
 
 ## Phase 5 - Reachability & Hardening
 - [x] TFE-501 — Fix unauthenticated SPA reachability so the dashboard can actually load without getting blocked by security rules.
-- [ ] TFE-502 — Redirect unauthenticated users to login instead of leaving them on a broken page when auth is required.
+- [x] TFE-502 — Redirect unauthenticated users to login instead of leaving them on a broken page when auth is required. **Verified already done, 2026-10-03** — never actually open, just never checked off. Both route guards already implement this: `ProtectedRoute.js` redirects to `/login?redirect=<path>` (preserving the originally-requested path, covered by `ProtectedRoute.test.js`), and `OperatorRoute.js` redirects unauthenticated users to `/login` and non-operators to `/dashboard` (its own extensive inline comment explains the ADR-012 reasoning). Checked for the same class of bug found elsewhere this session (OMS's `ProtectedRoute` false-redirecting during a `user=null` loading race) — doesn't apply here: `AuthContext`'s `isAuthenticated` is derived synchronously from `authService.isAuthenticated()` at provider init (no async profile fetch gating the role/auth decision), so there's no equivalent loading window where an authenticated user could be wrongly bounced.
 - [ ] TFE-503 — Expand frontend test coverage so the visualizer and dashboard remain stable as the feature set grows.
 
 ## Backlog — Refinement / Future Design Work
